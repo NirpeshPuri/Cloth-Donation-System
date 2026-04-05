@@ -185,8 +185,8 @@
                 </div>
                 <div class="relative hidden md:block">
                     <div class="floating">
-                        <img src="https://images.unsplash.com/photo-1584515933487-779824d29309?w=600&auto=format"
-                            alt="Donation clothes" class="rounded-3xl shadow-2xl object-cover w-full h-[450px]">
+                        <img src="{{ asset('images/banners/banner1.webp') }}" alt="Donation clothes"
+                            class="rounded-3xl shadow-2xl object-cover w-full h-[450px]">
                     </div>
                     <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl flex items-center gap-3">
                         <i class="fas fa-hands-helping text-teal-600 text-2xl"></i>
