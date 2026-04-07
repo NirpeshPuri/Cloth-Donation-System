@@ -51,9 +51,17 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="{{ route('user.home') }}"
                         class="text-gray-700 hover:text-teal-600 transition font-medium">Home</a>
-                    <a href="#" class="text-gray-700 hover:text-teal-600 transition font-medium">My Donations</a>
-                    <a href="#" class="text-gray-700 hover:text-teal-600 transition font-medium">My Requests</a>
+                    <a href="{{ route('user.donate') }}" class="text-gray-700 hover:text-teal-600 transition">Donate</a>
+                    <a href="{{ route('user.my-donations') }}" class="text-gray-700 hover:text-teal-600 transition">My
+                        Donations</a>
+                    <a href="{{ route('user.my-requests') }}" class="text-gray-700 hover:text-teal-600 transition">My
+                        Requests</a>
                     <a href="#" class="text-gray-700 hover:text-teal-600 transition font-medium">Profile</a>
+                    <a href="{{ route('cart.index') }}" class="text-gray-700 hover:text-teal-600 transition relative">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span id="cartCount"
+                            class="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">0</span>
+                    </a>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="text-gray-700 hidden md:inline">Welcome, {{ Auth::user()->name }}!</span>

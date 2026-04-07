@@ -11,8 +11,10 @@ class ClothRequest extends Model
     protected $fillable = [
         'receiver_id',
         'cloth_id',
+        'admin_id',      // ADD THIS - needed to track which collection center
         'quantity',
         'status',
+        'notes',         // ADD THIS - for additional notes
     ];
 
     public function receiver()
@@ -23,5 +25,10 @@ class ClothRequest extends Model
     public function cloth()
     {
         return $this->belongsTo(Cloth::class);
+    }
+
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class, 'admin_id');
     }
 }
