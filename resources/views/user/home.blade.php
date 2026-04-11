@@ -41,16 +41,58 @@
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <i class="fas fa-tshirt text-teal-600 text-3xl mb-3"></i>
                 <h3 class="text-lg font-semibold">Available Items</h3>
-                <p class="text-3xl font-bold text-teal-600">{{ $clothes->sum('quantity') ?? 0 }}</p>
+                <p class="text-3xl font-bold text-teal-600">{{ $availableClothes->sum('quantity') ?? 0 }}</p>
                 <p class="text-gray-500 text-sm">Total clothes in stock</p>
             </div>
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <i class="fas fa-hand-holding-heart text-teal-600 text-3xl mb-3"></i>
                 <h3 class="text-lg font-semibold">My Requests</h3>
-                <p class="text-3xl font-bold text-teal-600">{{ $totalRequests ?? 0 }}</p>
-                <p class="text-gray-500 text-sm">Pending & completed</p>
+                <p class="text-3xl font-bold text-teal-600">{{ $totalRequestedItems ?? 0 }}</p>
+                <p class="text-gray-500 text-sm">Total items requested</p>
             </div>
         </div>
+
+        <!-- Receiver's Activity Section -->
+        @if (isset($selectedAdmin))
+            <div class="mb-8">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="bg-gray-50 px-6 py-4 border-b">
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-teal-600"></i> My Request Activity
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-yellow-600">{{ $pendingRequests ?? 0 }}</p>
+                                <p class="text-xs text-gray-500">Pending</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-green-600">{{ $approvedRequests ?? 0 }}</p>
+                                <p class="text-xs text-gray-500">Approved</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-blue-600">{{ $completedRequests ?? 0 }}</p>
+                                <p class="text-xs text-gray-500">Completed</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-red-600">{{ $rejectedRequests ?? 0 }}</p>
+                                <p class="text-xs text-gray-500">Rejected</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-gray-600">{{ $cancelledRequests ?? 0 }}</p>
+                                <p class="text-xs text-gray-500">Cancelled</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <a href="{{ route('user.my-requests') }}" class="text-teal-600 hover:text-teal-700 text-sm">
+                                View All My Requests →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Selected Admin Banner -->
         @if (isset($selectedAdmin))
@@ -78,7 +120,7 @@
             </div>
         @endif
 
-        <!-- Nearby Admins Section (Hidden when admin selected) -->
+        <!-- Nearby Admins Section -->
         @if (!isset($selectedAdmin))
             <div class="mb-12">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
@@ -96,8 +138,6 @@
                         @foreach ($nearbyAdmins as $admin)
                             <div class="bg-white rounded-xl shadow-md overflow-hidden hover-scale cursor-pointer transition-all border-2 border-transparent hover:border-teal-500 relative"
                                 onclick="selectAdmin({{ $admin->id }})">
-
-                                <!-- Medium Banner Image -->
                                 <div class="relative overflow-hidden bg-gradient-to-r from-teal-500 to-emerald-500">
                                     <div class="aspect-video w-full">
                                         @if ($admin->profile_photo)
@@ -110,20 +150,11 @@
                                             </div>
                                         @endif
                                     </div>
-
                                     <div
                                         class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold text-teal-600 shadow-md z-10">
                                         <i class="fas fa-location-dot mr-1"></i> {{ $admin->distance }} km
                                     </div>
-
-                                    @if (isset($admin->clothes_count) && $admin->clothes_count > 0)
-                                        <div
-                                            class="absolute bottom-3 left-3 bg-teal-600/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-white shadow-md z-10">
-                                            <i class="fas fa-tshirt mr-1"></i> {{ $admin->clothes_count }} items
-                                        </div>
-                                    @endif
                                 </div>
-
                                 <div class="p-5">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1">
@@ -143,7 +174,6 @@
                                             </span>
                                         @endif
                                     </div>
-
                                     <button
                                         class="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg transition font-semibold">
                                         <i class="fas fa-store mr-2"></i> Browse This Center
@@ -157,237 +187,1044 @@
                         <i class="fas fa-info-circle text-yellow-600 text-3xl mb-2 block"></i>
                         <p class="text-gray-600">No collection centers found nearby.</p>
                         <p class="text-gray-500 text-sm mt-2">Try expanding your search area or check back later.</p>
-                        @if (!session()->has('user_latitude') && !Auth::user()->latitude)
-                            <button onclick="getUserLocation()"
-                                class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-                                <i class="fas fa-location-dot mr-2"></i> Share My Location
-                            </button>
-                        @endif
                     </div>
                 @endif
             </div>
         @endif
 
-        <!-- Clothes Section (E-commerce Grid) -->
+        <!-- Products Display Section (Only when admin is selected) -->
         @if (isset($selectedAdmin))
-            <div class="mt-8">
-                <!-- Header with filters -->
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
-                            <i class="fas fa-tshirt text-teal-600 mr-3"></i>
-                            Available Clothes from {{ $selectedAdmin->name }}
-                        </h2>
-                        <p class="text-gray-500 mt-1">Browse and request items you need</p>
-                    </div>
+            @push('styles')
+                <style>
+                    .section-container {
+                        position: relative;
+                        margin-top: 3rem;
+                    }
 
-                    <!-- Filters -->
-                    <div class="flex gap-2">
-                        <select id="genderFilter"
-                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="all">All Genders</option>
-                            <option value="men">👨 Men</option>
-                            <option value="women">👩 Women</option>
-                            <option value="kids">🧒 Kids</option>
-                            <option value="unisex">👥 Unisex</option>
-                        </select>
-                        <select id="sizeFilter"
-                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="all">All Sizes</option>
-                            <option value="XS">XS</option>
-                            <option value="S">S</option>
-                            <option value="M">M</option>
-                            <option value="L">L</option>
-                            <option value="XL">XL</option>
-                            <option value="XXL">XXL</option>
-                        </select>
+                    .scroll-container {
+                        overflow-x: auto;
+                        scroll-behavior: smooth;
+                        -webkit-overflow-scrolling: touch;
+                        scrollbar-width: thin;
+                        display: flex;
+                        gap: 1.5rem;
+                        padding-bottom: 1rem;
+                    }
+
+                    .scroll-container::-webkit-scrollbar {
+                        height: 6px;
+                    }
+
+                    .scroll-container::-webkit-scrollbar-track {
+                        background: #f1f1f1;
+                        border-radius: 10px;
+                    }
+
+                    .scroll-container::-webkit-scrollbar-thumb {
+                        background: #0f766e;
+                        border-radius: 10px;
+                    }
+
+                    .scroll-btn {
+                        position: absolute;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        background: white;
+                        border-radius: 9999px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        padding: 0.5rem;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        z-index: 10;
+                    }
+
+                    .scroll-btn:hover {
+                        background-color: #0f766e;
+                        color: white;
+                    }
+
+                    .scroll-left {
+                        left: -0.75rem;
+                    }
+
+                    .scroll-right {
+                        right: -0.75rem;
+                    }
+
+                    .product-card {
+                        flex-shrink: 0;
+                        width: 16rem;
+                        background: white;
+                        border-radius: 0.75rem;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        overflow: hidden;
+                        transition: all 0.3s ease;
+                        cursor: pointer;
+                    }
+
+                    .product-card:hover {
+                        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                        transform: translateY(-4px);
+                    }
+
+                    .empty-section {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 3rem;
+                        background-color: #f9fafb;
+                        border-radius: 0.75rem;
+                        text-align: center;
+                    }
+
+                    .filter-sidebar {
+                        background: white;
+                        border-radius: 1rem;
+                        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+                        padding: 1.5rem;
+                        position: sticky;
+                        top: 80px;
+                    }
+
+                    .filter-sidebar h3 {
+                        font-weight: 600;
+                        margin-bottom: 1rem;
+                        padding-bottom: 0.5rem;
+                        border-bottom: 2px solid #e5e7eb;
+                    }
+
+                    .filter-group {
+                        margin-bottom: 1.25rem;
+                    }
+
+                    .filter-group label {
+                        display: block;
+                        font-size: 0.875rem;
+                        font-weight: 500;
+                        color: #374151;
+                        margin-bottom: 0.5rem;
+                    }
+
+                    .filter-group select,
+                    .filter-group input {
+                        width: 100%;
+                        padding: 0.5rem;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 0.5rem;
+                        font-size: 0.875rem;
+                        outline: none;
+                        transition: all 0.2s;
+                    }
+
+                    .filter-group select:focus,
+                    .filter-group input:focus {
+                        border-color: #0f766e;
+                        ring: 2px solid #0f766e;
+                    }
+
+                    .apply-filters-btn {
+                        width: 100%;
+                        background-color: #0f766e;
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 0.5rem;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                    }
+
+                    .apply-filters-btn:hover {
+                        background-color: #0d5c56;
+                    }
+
+                    .reset-filters-btn {
+                        width: 100%;
+                        background-color: #e5e7eb;
+                        color: #374151;
+                        padding: 0.5rem 1rem;
+                        border-radius: 0.5rem;
+                        font-weight: 500;
+                        margin-top: 0.5rem;
+                        transition: all 0.2s;
+                    }
+
+                    .reset-filters-btn:hover {
+                        background-color: #d1d5db;
+                    }
+
+                    .search-results-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 1.5rem;
+                        flex-wrap: wrap;
+                        gap: 1rem;
+                    }
+
+                    .sort-select {
+                        padding: 0.5rem;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 0.5rem;
+                        font-size: 0.875rem;
+                    }
+
+                    .recent-search-tag {
+                        background-color: #f3f4f6;
+                        padding: 0.25rem 0.75rem;
+                        border-radius: 9999px;
+                        font-size: 0.75rem;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+
+                    .recent-search-tag:hover {
+                        background-color: #e5e7eb;
+                    }
+                </style>
+            @endpush
+
+            <!-- Search and Filters Section -->
+            <div class="grid lg:grid-cols-4 gap-6 mb-8">
+                <!-- Filters Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="filter-sidebar">
+                        <h3><i class="fas fa-filter mr-2"></i> Filters</h3>
+
+                        <div class="filter-group">
+                            <label><i class="fas fa-search mr-1"></i> Search</label>
+                            <input type="text" id="searchInput" placeholder="Search by name, category..."
+                                value="{{ request('search') }}">
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="fas fa-venus-mars mr-1"></i> Gender</label>
+                            <select id="genderFilter">
+                                <option value="">All Genders</option>
+                                <option value="men">👨 Men</option>
+                                <option value="women">👩 Women</option>
+                                <option value="kids">🧒 Kids</option>
+                                <option value="unisex">👥 Unisex</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="fas fa-ruler mr-1"></i> Size</label>
+                            <select id="sizeFilter">
+                                <option value="">All Sizes</option>
+                                <option value="XS">XS</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="XXL">XXL</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label><i class="fas fa-star mr-1"></i> Quality</label>
+                            <select id="qualityFilter">
+                                <option value="">All Qualities</option>
+                                <option value="new">New</option>
+                                <option value="like_new">Like New</option>
+                                <option value="good">Good</option>
+                                <option value="fair">Fair</option>
+                            </select>
+                        </div>
+
+                        <!-- Category Filter - Add this after Quality filter -->
+                        <div class="filter-group">
+                            <label><i class="fas fa-tags mr-1"></i> Category</label>
+                            <select id="categoryFilter">
+                                <option value="">All Categories</option>
+                                <option value="shirt">👕 Shirts</option>
+                                <option value="t-shirt">👕 T-Shirts</option>
+                                <option value="jeans">👖 Jeans</option>
+                                <option value="pants">👖 Pants</option>
+                                <option value="jacket">🧥 Jackets</option>
+                                <option value="sweater">🧥 Sweaters</option>
+                                <option value="dress">👗 Dresses</option>
+                                <option value="saree">👘 Saree</option>
+                                <option value="kurta">👘 Kurta</option>
+                                <option value="traditional">👘 Traditional</option>
+                                <option value="ethnic">👘 Ethnic Wear</option>
+                                <option value="winter">❄️ Winter Wear</option>
+                                <option value="summer">☀️ Summer Wear</option>
+                            </select>
+                        </div>
+
+                        <button class="apply-filters-btn" onclick="applyFilters()">
+                            <i class="fas fa-search mr-2"></i> Apply Filters
+                        </button>
+                        <button class="reset-filters-btn" onclick="resetFilters()">
+                            <i class="fas fa-undo-alt mr-2"></i> Reset
+                        </button>
                     </div>
                 </div>
 
-                @if ($clothes->count() > 0)
-                    <!-- Products Grid -->
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="clothesGrid">
-                        @foreach ($clothes as $cloth)
-                            <div class="bg-white rounded-xl shadow-md overflow-hidden cloth-card transition cursor-pointer hover:shadow-xl"
-                                data-gender="{{ $cloth->gender }}" data-size="{{ $cloth->size }}"
-                                onclick="viewDetails({{ $cloth->id }})">
+                <!-- Search Results -->
+                <div class="lg:col-span-3">
+                    <div class="search-results-header">
+                        <h2 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-search text-teal-600 mr-2"></i>
+                            Search Results
+                            <span id="resultCount" class="text-sm text-gray-500 font-normal ml-2"></span>
+                        </h2>
+                        <div>
+                            <label class="text-sm text-gray-600 mr-2">Sort by:</label>
+                            <select id="sortBy" class="sort-select" onchange="applyFilters()">
+                                <option value="latest">Latest First</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="recommended">Recommended</option>
+                                <option value="most_requested">Most Requested</option>
+                            </select>
+                        </div>
+                    </div>
 
-                                <!-- Cloth Image -->
-                                <div class="relative overflow-hidden bg-gray-200">
-                                    <div class="aspect-square w-full">
-                                        @if ($cloth->image_path)
-                                            <img src="{{ Storage::url($cloth->image_path) }}" alt="{{ $cloth->name }}"
-                                                class="w-full h-full object-cover hover:scale-110 transition duration-300">
-                                        @else
-                                            <div
-                                                class="w-full h-full flex items-center justify-center bg-gradient-to-br from-teal-50 to-teal-100">
-                                                <i class="fas fa-tshirt text-teal-400 text-6xl"></i>
+                    <!-- Recent Searches -->
+                    <div id="recentSearchesContainer" class="mb-4 flex flex-wrap gap-2 items-center"></div>
+
+                    <div id="searchResultsContainer" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="text-center py-12 col-span-full">
+                            <i class="fas fa-search text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">Use filters above to search for clothes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Sections -->
+            <div id="originalSections">
+                <!-- Popular Items Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-fire text-orange-500 mr-3"></i> Most Popular
+                            </h2>
+                            <p class="text-gray-500 mt-1">Most requested items by our community</p>
+                        </div>
+                        @if ($popularItems && $popularItems->count() > 4)
+                            <a href="{{ route('user.category', 'popular') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($popularItems && $popularItems->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-popular">
+                                @foreach ($popularItems as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition duration-300">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->category ?? 'Clothing' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs text-gray-500">{{ $cloth->size ?? 'One Size' }}</span>
+                                                <span class="text-xs text-teal-600">{{ $cloth->quantity }} left</span>
                                             </div>
-                                        @endif
-                                    </div>
-
-                                    <!-- Stock Badge -->
-                                    @if ($cloth->quantity > 5)
-                                        <span
-                                            class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                                            In Stock
-                                        </span>
-                                    @elseif($cloth->quantity > 0)
-                                        <span
-                                            class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
-                                            Only {{ $cloth->quantity }} left
-                                        </span>
-                                    @else
-                                        <span
-                                            class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                                            Out of Stock
-                                        </span>
-                                    @endif
-
-                                    <!-- Gender Badge -->
-                                    <span
-                                        class="absolute bottom-2 left-2 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                                        @if ($cloth->gender == 'men')
-                                            👨 Men
-                                        @elseif($cloth->gender == 'women')
-                                            👩 Women
-                                        @elseif($cloth->gender == 'kids')
-                                            🧒 Kids
-                                        @else
-                                            👥 Unisex
-                                        @endif
-                                    </span>
-                                </div>
-
-                                <!-- Cloth Details -->
-                                <div class="p-4">
-                                    <h3 class="font-bold text-lg text-gray-800 mb-1 line-clamp-1">{{ $cloth->name }}</h3>
-
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="text-xs text-gray-500">Category:</span>
-                                        <span class="text-sm text-gray-600">{{ $cloth->category ?? 'General' }}</span>
-                                    </div>
-
-                                    <div class="flex justify-between items-center mb-3">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-gray-500 text-xs">Size:</span>
-                                            <span
-                                                class="font-semibold text-gray-800 text-sm">{{ $cloth->size ?? 'Various' }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-gray-500 text-xs">Color:</span>
-                                            <div class="w-4 h-4 rounded-full border"
-                                                style="background-color: {{ strtolower($cloth->color) == 'marron' ? '#800020' : strtolower($cloth->color) ?? '#ccc' }}">
-                                            </div>
-                                            <span
-                                                class="font-semibold text-gray-800 text-sm">{{ $cloth->color ?? 'Various' }}</span>
                                         </div>
                                     </div>
-
-                                    <div class="flex justify-between items-center mb-3">
-                                        <div class="flex items-center gap-1">
-                                            <i class="fas fa-star text-yellow-500 text-xs"></i>
-                                            <span
-                                                class="text-sm text-gray-600 capitalize">{{ $cloth->quality ?? 'Good' }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-1">
-                                            <i class="fas fa-box text-teal-500 text-xs"></i>
-                                            <span class="text-sm text-gray-600">{{ $cloth->quantity }} available</span>
-                                        </div>
-                                    </div>
-
-                                    <button onclick="event.stopPropagation(); viewDetails({{ $cloth->id }})"
-                                        class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-lg transition font-semibold flex items-center justify-center gap-2">
-                                        <i class="fas fa-eye"></i> View Details
-                                    </button>
-                                </div>
+                                @endforeach
                             </div>
-                        @endforeach
-                    </div>
+                            @if ($popularItems->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-popular')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-popular')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-fire text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No popular items available at the moment.</p>
+                        </div>
+                    @endif
+                </div>
 
-                    <!-- No Results Message -->
-                    <div id="noResults" class="hidden bg-gray-100 rounded-xl p-12 text-center">
-                        <i class="fas fa-search text-gray-400 text-5xl mb-3 block"></i>
-                        <p class="text-gray-500 text-lg">No clothes match your filters.</p>
-                        <button onclick="resetFilters()" class="mt-4 text-teal-600 hover:text-teal-700">Reset
-                            Filters</button>
+                <!-- Personalized Recommendations Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-star text-yellow-500 mr-3"></i> Recommended For You
+                            </h2>
+                            <p class="text-gray-500 mt-1">Based on your preferences and search history</p>
+                        </div>
+                        @if ($recommendedClothes && $recommendedClothes->count() > 4)
+                            <a href="{{ route('user.category', 'recommended') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
                     </div>
-                @else
-                    <div class="bg-gray-100 rounded-xl p-12 text-center">
-                        <i class="fas fa-box-open text-gray-400 text-5xl mb-3 block"></i>
-                        <p class="text-gray-500 text-lg">No clothes available at this collection center.</p>
-                        <p class="text-gray-400 text-sm mt-2">Please check back later or try another center.</p>
-                        <button onclick="clearAdminSelection()"
-                            class="mt-4 bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg transition">
-                            <i class="fas fa-arrow-left mr-2"></i> Browse Other Centers
-                        </button>
+                    @if ($recommendedClothes && $recommendedClothes->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-recommended">
+                                @foreach ($recommendedClothes as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                            @if ($cloth->quantity <= 3 && $cloth->quantity > 0)
+                                                <span
+                                                    class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Only
+                                                    {{ $cloth->quantity }} left</span>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->category ?? 'Clothing' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs text-gray-500">{{ $cloth->size ?? 'One Size' }}</span>
+                                                <span class="text-xs text-teal-600">{{ $cloth->quantity }}
+                                                    available</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($recommendedClothes->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-recommended')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-recommended')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-star text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No recommendations available at the moment.</p>
+                            <p class="text-gray-400 text-sm mt-1">Start searching to get personalized recommendations.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Seasonal Recommendations -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-calendar-alt text-teal-600 mr-3"></i>
+                                {{ ucfirst($currentSeason ?? 'Summer') }} Collection
+                            </h2>
+                            <p class="text-gray-500 mt-1">Perfect for the current season</p>
+                        </div>
+                        @if ($seasonalRecommendations && $seasonalRecommendations->count() > 4)
+                            <a href="{{ route('user.category', 'seasonal') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
                     </div>
-                @endif
+                    @if ($seasonalRecommendations && $seasonalRecommendations->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-seasonal">
+                                @foreach ($seasonalRecommendations as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->category ?? 'Clothing' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs text-gray-500">{{ $cloth->size ?? 'One Size' }}</span>
+                                                <span class="text-xs text-teal-600">{{ $cloth->quantity }}
+                                                    available</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($seasonalRecommendations->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-seasonal')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-seasonal')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-calendar-alt text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No seasonal items available at the moment.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Shirts Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-tshirt text-teal-600 mr-3"></i> Shirts & Tops
+                            </h2>
+                            <p class="text-gray-500 mt-1">Casual and formal shirts for every occasion</p>
+                        </div>
+                        @if ($categoryGroups['shirts']->count() > 4)
+                            <a href="{{ route('user.category', 'shirts') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($categoryGroups['shirts']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-shirts">
+                                @foreach ($categoryGroups['shirts'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->size ?? 'One Size' }} |
+                                                {{ $cloth->color ?? 'Various' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                <span class="text-xs text-gray-500">{{ $cloth->quantity }} left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($categoryGroups['shirts']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-shirts')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-shirts')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-tshirt text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No shirts available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Pants Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-shopping-cart text-teal-600 mr-3"></i> Pants & Jeans
+                            </h2>
+                            <p class="text-gray-500 mt-1">Comfortable pants, jeans, and trousers</p>
+                        </div>
+                        @if ($categoryGroups['pants']->count() > 4)
+                            <a href="{{ route('user.category', 'pants') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($categoryGroups['pants']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-pants">
+                                @foreach ($categoryGroups['pants'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-shopping-cart text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->size ?? 'One Size' }} |
+                                                {{ $cloth->color ?? 'Various' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                <span class="text-xs text-gray-500">{{ $cloth->quantity }} left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($categoryGroups['pants']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-pants')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-pants')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-shopping-cart text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No pants or jeans available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Traditional Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-star-of-life text-teal-600 mr-3"></i> Traditional Attire
+                            </h2>
+                            <p class="text-gray-500 mt-1">Beautiful traditional and ethnic wear</p>
+                        </div>
+                        @if ($categoryGroups['traditional']->count() > 4)
+                            <a href="{{ route('user.category', 'traditional') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($categoryGroups['traditional']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-traditional">
+                                @foreach ($categoryGroups['traditional'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-star-of-life text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->size ?? 'One Size' }} |
+                                                {{ $cloth->color ?? 'Various' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                <span class="text-xs text-gray-500">{{ $cloth->quantity }} left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($categoryGroups['traditional']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-traditional')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-traditional')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-star-of-life text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No traditional attire available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Winter Wear Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-snowflake text-teal-600 mr-3"></i> Winter Wear
+                            </h2>
+                            <p class="text-gray-500 mt-1">Stay warm with our winter collection</p>
+                        </div>
+                        @if ($categoryGroups['winter']->count() > 4)
+                            <a href="{{ route('user.category', 'winter') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($categoryGroups['winter']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-winter">
+                                @foreach ($categoryGroups['winter'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-snowflake text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->size ?? 'One Size' }} |
+                                                {{ $cloth->color ?? 'Various' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                <span class="text-xs text-gray-500">{{ $cloth->quantity }} left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($categoryGroups['winter']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-winter')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-winter')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-snowflake text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No winter wear available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Dresses Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-female text-teal-600 mr-3"></i> Dresses & Gowns
+                            </h2>
+                            <p class="text-gray-500 mt-1">Elegant dresses for every occasion</p>
+                        </div>
+                        @if ($categoryGroups['dresses']->count() > 4)
+                            <a href="{{ route('user.category', 'dresses') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($categoryGroups['dresses']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-dresses">
+                                @foreach ($categoryGroups['dresses'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-female text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->size ?? 'One Size' }} |
+                                                {{ $cloth->color ?? 'Various' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                <span class="text-xs text-gray-500">{{ $cloth->quantity }} left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($categoryGroups['dresses']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-dresses')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-dresses')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-female text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No dresses available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Other Items Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-ellipsis-h text-teal-600 mr-3"></i> More Items
+                            </h2>
+                            <p class="text-gray-500 mt-1">Explore other available items</p>
+                        </div>
+                        @if ($categoryGroups['other']->count() > 4)
+                            <a href="{{ route('user.category', 'other') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+                    @if ($categoryGroups['other']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-other">
+                                @foreach ($categoryGroups['other'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $cloth->size ?? 'One Size' }} |
+                                                {{ $cloth->color ?? 'Various' }}</p>
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                <span class="text-xs text-gray-500">{{ $cloth->quantity }} left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @if ($categoryGroups['other']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-other')"><i
+                                        class="fas fa-chevron-left"></i></button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-other')"><i
+                                        class="fas fa-chevron-right"></i></button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-ellipsis-h text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No other items available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
             </div>
         @endif
     </div>
 
     @push('scripts')
         <script>
-            // Filter functionality
-            const genderFilter = document.getElementById('genderFilter');
-            const sizeFilter = document.getElementById('sizeFilter');
-            const clothesGrid = document.getElementById('clothesGrid');
-            const noResults = document.getElementById('noResults');
+            let searchTimeout;
 
-            if (genderFilter && sizeFilter && clothesGrid) {
-                function filterClothes() {
-                    const selectedGender = genderFilter.value;
-                    const selectedSize = sizeFilter.value;
-
-                    const clothCards = document.querySelectorAll('.cloth-card');
-                    let visibleCount = 0;
-
-                    clothCards.forEach(card => {
-                        const cardGender = card.getAttribute('data-gender');
-                        const cardSize = card.getAttribute('data-size');
-
-                        let genderMatch = selectedGender === 'all' || cardGender === selectedGender;
-                        let sizeMatch = selectedSize === 'all' || cardSize === selectedSize;
-
-                        if (genderMatch && sizeMatch) {
-                            card.style.display = '';
-                            visibleCount++;
+            // Load recent searches on page load
+            function loadRecentSearches() {
+                fetch('{{ route('user.recent-searches') }}', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const container = document.getElementById('recentSearchesContainer');
+                        if (data.searches && data.searches.length > 0) {
+                            let html = '<span class="text-sm text-gray-500">Recent:</span>';
+                            data.searches.forEach(search => {
+                                html += `<button onclick="applyRecentSearch('${search.replace(/'/g, "\\'")}')" class="recent-search-tag">
+                                ${search}
+                            </button>`;
+                            });
+                            container.innerHTML = html;
                         } else {
-                            card.style.display = 'none';
+                            container.innerHTML = '';
                         }
                     });
+            }
 
-                    if (noResults) {
-                        if (visibleCount === 0) {
-                            noResults.classList.remove('hidden');
-                        } else {
-                            noResults.classList.add('hidden');
+            function applyRecentSearch(term) {
+                document.getElementById('searchInput').value = term;
+                applyFilters();
+            }
+
+            function applyFilters() {
+                const search = document.getElementById('searchInput').value;
+                const gender = document.getElementById('genderFilter').value;
+                const size = document.getElementById('sizeFilter').value;
+                const quality = document.getElementById('qualityFilter').value;
+                const category = document.getElementById('categoryFilter').value;
+                const sortBy = document.getElementById('sortBy').value;
+
+                document.getElementById('searchResultsContainer').innerHTML = `
+        <div class="text-center py-12 col-span-full">
+            <i class="fas fa-spinner fa-spin text-teal-600 text-3xl"></i>
+            <p class="text-gray-500 mt-2">Searching...</p>
+        </div>
+    `;
+                document.getElementById('originalSections').style.display = 'none';
+
+                const url =
+                    `{{ route('user.search') }}?search=${encodeURIComponent(search)}&gender=${gender}&size=${size}&quality=${quality}&category=${category}&sort_by=${sortBy}`;
+
+                fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
                         }
-                    }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            console.error('Search error:', data.error);
+                            throw new Error(data.error);
+                        }
+                        displaySearchResults(data);
+                        loadRecentSearches();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('searchResultsContainer').innerHTML = `
+            <div class="text-center py-12 col-span-full">
+                <i class="fas fa-exclamation-circle text-red-500 text-3xl mb-3"></i>
+                <p class="text-gray-500">Error loading results: ${error.message}</p>
+                <p class="text-gray-400 text-sm mt-2">Please check your connection and try again.</p>
+                <button onclick="applyFilters()" class="mt-4 bg-teal-600 text-white px-4 py-2 rounded-lg">Try Again</button>
+            </div>
+        `;
+                    });
+            }
+
+            function displaySearchResults(data) {
+                const container = document.getElementById('searchResultsContainer');
+                document.getElementById('resultCount').innerHTML = `${data.total} items found`;
+
+                if (data.items.length === 0) {
+                    container.innerHTML = `
+                <div class="text-center py-12 col-span-full">
+                    <i class="fas fa-search text-gray-400 text-5xl mb-3"></i>
+                    <p class="text-gray-500 text-lg">No items found matching your criteria.</p>
+                    <p class="text-gray-400 text-sm mt-2">Try adjusting your filters or search term.</p>
+                </div>
+            `;
+                    return;
                 }
 
-                genderFilter.addEventListener('change', filterClothes);
-                sizeFilter.addEventListener('change', filterClothes);
+                let html = '';
+                data.items.forEach(cloth => {
+                    html += `
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition cursor-pointer" onclick="viewDetails(${cloth.id})">
+                    <div class="relative h-48 overflow-hidden">
+                        ${cloth.image_path ?
+                            `<img src="/storage/${cloth.image_path}" class="w-full h-full object-cover hover:scale-110 transition duration-300">` :
+                            `<div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                                                                        <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                                                                    </div>`
+                        }
+                        ${cloth.quantity <= 3 && cloth.quantity > 0 ?
+                            `<span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Only ${cloth.quantity} left</span>` : ''}
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-gray-800">${escapeHtml(cloth.name)}</h3>
+                        <p class="text-sm text-gray-500">${cloth.category || 'Clothing'}</p>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-xs text-gray-500">${cloth.size || 'One Size'}</span>
+                            <span class="text-xs text-teal-600">${cloth.quantity} available</span>
+                        </div>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">${cloth.gender || 'Unisex'}</span>
+                            ${cloth.quality ? `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">${cloth.quality}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+                });
+                container.innerHTML = html;
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
 
             function resetFilters() {
-                if (genderFilter) genderFilter.value = 'all';
-                if (sizeFilter) sizeFilter.value = 'all';
-                filterClothes();
+                document.getElementById('searchInput').value = '';
+                document.getElementById('genderFilter').value = '';
+                document.getElementById('sizeFilter').value = '';
+                document.getElementById('qualityFilter').value = '';
+                document.getElementById('categoryFilter').value = '';
+                document.getElementById('sortBy').value = 'latest';
+
+                document.getElementById('originalSections').style.display = 'block';
+                document.getElementById('searchResultsContainer').innerHTML = `
+            <div class="text-center py-12 col-span-full">
+                <i class="fas fa-search text-gray-400 text-5xl mb-3"></i>
+                <p class="text-gray-500">Use filters above to search for clothes</p>
+            </div>
+        `;
+                document.getElementById('resultCount').innerHTML = '';
             }
+
+            document.getElementById('searchInput').addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (this.value.length >= 2 || this.value.length === 0) {
+                        applyFilters();
+                    }
+                }, 500);
+            });
 
             function viewDetails(clothId) {
                 window.location.href = '/user/cloth/' + clothId;
+            }
+
+            function scrollLeft(sectionId) {
+                const container = document.getElementById(sectionId);
+                if (container) container.scrollBy({
+                    left: -300,
+                    behavior: 'smooth'
+                });
+            }
+
+            function scrollRight(sectionId) {
+                const container = document.getElementById(sectionId);
+                if (container) container.scrollBy({
+                    left: 300,
+                    behavior: 'smooth'
+                });
             }
 
             function getUserLocation() {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
-                            const latitude = position.coords.latitude;
-                            const longitude = position.coords.longitude;
-
                             fetch('{{ route('user.update.location') }}', {
                                     method: 'POST',
                                     headers: {
@@ -395,23 +1232,21 @@
                                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                     },
                                     body: JSON.stringify({
-                                        latitude: latitude,
-                                        longitude: longitude
+                                        latitude: position.coords.latitude,
+                                        longitude: position.coords.longitude
                                     })
                                 })
                                 .then(response => response.json())
                                 .then(data => {
-                                    if (data.success) {
-                                        window.location.reload();
-                                    }
+                                    if (data.success) window.location.reload();
                                 });
                         },
-                        function(error) {
-                            alert('Unable to get your location. Please enable location services.');
+                        function() {
+                            alert('Unable to get your location.');
                         }
                     );
                 } else {
-                    alert('Geolocation is not supported by your browser.');
+                    alert('Geolocation is not supported.');
                 }
             }
 
@@ -419,10 +1254,7 @@
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{{ route('user.select.admin') }}';
-                form.innerHTML = `
-                    @csrf
-                    <input type="hidden" name="admin_id" value="${adminId}">
-                `;
+                form.innerHTML = `@csrf <input type="hidden" name="admin_id" value="${adminId}">`;
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -435,6 +1267,9 @@
                 document.body.appendChild(form);
                 form.submit();
             }
+
+            // Load recent searches on page load
+            loadRecentSearches();
         </script>
     @endpush
 @endsection

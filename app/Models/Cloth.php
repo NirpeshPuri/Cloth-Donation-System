@@ -12,14 +12,19 @@ class Cloth extends Model
     protected $table = 'clothes';
 
     protected $fillable = [
+        'name',
+        'category',
+        'gender',
         'admin_id',
         'donor_id',
         'brand_id',
         'cloth_type_id',
         'size',
+        'color',
         'image_path',
         'quantity',
         'quality',
+        'description',
         'status',
     ];
 
@@ -48,13 +53,11 @@ class Cloth extends Model
         return $this->hasMany(Donation::class);
     }
 
-    // Relationship with Admin (if you have Admin model)
     public function admin()
     {
         return $this->belongsTo(Admin::class, 'admin_id');
     }
 
-    // Check if cloth is available
     public function isAvailable()
     {
         return $this->quantity > 0;

@@ -4,13 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Admin;
 use App\Models\Cloth;
-use App\Models\User;
+use App\Models\ClothRequest;
+use App\Models\Donation;
+use App\Models\DonationItem;
+use App\Services\ReceiverRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class UserHomeController extends Controller
 {
+    protected $recommendationService;
+
+    public function __construct(ReceiverRecommendationService $recommendationService)
+    {
+        $this->recommendationService = $recommendationService;
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -18,6 +28,7 @@ class UserHomeController extends Controller
         // Get user's location
         $userLatitude = null;
         $userLongitude = null;
+        $currentSeason = $this->getCurrentSeason();
 
         if ($request->session()->has('user_latitude') && $request->session()->has('user_longitude')) {
             $userLatitude = $request->session()->get('user_latitude');
@@ -36,34 +47,100 @@ class UserHomeController extends Controller
         // Get selected admin from session
         $selectedAdminId = $request->session()->get('selected_admin_id');
         $selectedAdmin = null;
-        $clothes = collect();
+
+        // Clothes available for receiving
+        $availableClothes = collect();
+        $recommendedClothes = collect();
+        $seasonalRecommendations = collect();
+        $popularItems = collect();
+        $categoryGroups = [];
 
         if ($selectedAdminId) {
             $selectedAdmin = Admin::find($selectedAdminId);
             if ($selectedAdmin) {
-                // Remove is_available check - only check quantity > 0
-                $clothes = Cloth::where('admin_id', $selectedAdminId)
+                // Get available clothes from this collection center
+                $availableClothes = Cloth::where('admin_id', $selectedAdminId)
                     ->where('quantity', '>', 0)
+                    ->where('status', 'available')
                     ->orderBy('created_at', 'desc')
                     ->get();
+
+                // Get personalized recommendations based on receiver's request history
+                $recommendedClothes = $this->recommendationService->getPersonalizedRecommendations($selectedAdminId, 8);
+
+                // Get seasonal recommendations
+                $seasonalRecommendations = $this->recommendationService->getSeasonalRecommendations($currentSeason, $selectedAdminId, 4);
+
+                // Get popular items
+                $popularItems = $this->recommendationService->getPopularItems($selectedAdminId, 4);
+
+                // Group clothes by category
+                $categoryGroups = $this->groupClothesByCategory($availableClothes);
             }
         }
 
-        // Get user stats
-        $totalDonated = 0;
-        $totalRequests = 0;
-        $livesImpacted = 0;
+        // Receiver's activity stats
+        $myRequests = ClothRequest::where('receiver_id', $user->id)
+            ->with('cloth')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $pendingRequests = $myRequests->where('status', 'pending')->count();
+        $approvedRequests = $myRequests->where('status', 'approved')->count();
+        $completedRequests = $myRequests->where('status', 'completed')->count();
+        $rejectedRequests = $myRequests->where('status', 'rejected')->count();
+        $cancelledRequests = $myRequests->where('status', 'cancelled')->count();
+
+        $totalRequestedItems = $myRequests->sum('quantity');
+
+        // My Donations (if user also donates - optional)
+        $myDonations = Donation::where('donor_id', $user->id)
+            ->with('items')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalDonatedItems = DonationItem::whereHas('donation', function ($query) use ($user) {
+            $query->where('donor_id', $user->id);
+        })->sum('quantity');
 
         return view('user.home', compact(
             'nearbyAdmins',
             'selectedAdmin',
-            'clothes',
-            'totalDonated',
-            'totalRequests',
-            'livesImpacted',
+            'availableClothes',
+            'recommendedClothes',
+            'seasonalRecommendations',
+            'popularItems',
+            'categoryGroups',
+            'myRequests',
+            'pendingRequests',
+            'approvedRequests',
+            'completedRequests',
+            'rejectedRequests',
+            'cancelledRequests',
+            'totalRequestedItems',
+            'myDonations',
+            'totalDonatedItems',
             'userLatitude',
-            'userLongitude'
+            'userLongitude',
+            'currentSeason'
         ));
+    }
+
+    public function clothDetail($id)
+    {
+        $cloth = Cloth::with('admin')->findOrFail($id);
+
+        // Get frequently requested together items
+        $frequentlyRequestedTogether = $this->recommendationService->getFrequentlyRequestedTogether($id, $cloth->admin_id, 4);
+
+        // Get related clothes from same admin
+        $relatedClothes = Cloth::where('admin_id', $cloth->admin_id)
+            ->where('id', '!=', $id)
+            ->where('quantity', '>', 0)
+            ->limit(4)
+            ->get();
+
+        return view('user.cloth-detail', compact('cloth', 'relatedClothes', 'frequentlyRequestedTogether'));
     }
 
     public function updateLocation(Request $request)
@@ -73,11 +150,9 @@ class UserHomeController extends Controller
             'longitude' => 'required|numeric',
         ]);
 
-        // Store in session
         $request->session()->put('user_latitude', $request->latitude);
         $request->session()->put('user_longitude', $request->longitude);
 
-        // Optionally save to user's profile
         $user = Auth::user();
         $user->latitude = $request->latitude;
         $user->longitude = $request->longitude;
@@ -104,9 +179,52 @@ class UserHomeController extends Controller
         return redirect()->route('user.home')->with('success', 'Collection center cleared');
     }
 
+    private function getCurrentSeason()
+    {
+        $month = date('n');
+        if ($month >= 3 && $month <= 5) {
+            return 'summer';
+        } elseif ($month >= 6 && $month <= 8) {
+            return 'monsoon';
+        } elseif ($month >= 9 && $month <= 10) {
+            return 'festival';
+        } else {
+            return 'winter';
+        }
+    }
+
+    private function groupClothesByCategory($clothes)
+    {
+        return [
+            'shirts' => $clothes->filter(function ($cloth) {
+                return in_array(strtolower($cloth->category), ['shirt', 't-shirt', 'tshirt', 'blouse', 'top']);
+            }),
+            'pants' => $clothes->filter(function ($cloth) {
+                return in_array(strtolower($cloth->category), ['jeans', 'pants', 'trousers', 'leggings', 'shorts']);
+            }),
+            'traditional' => $clothes->filter(function ($cloth) {
+                return in_array(strtolower($cloth->category), ['saree', 'kurta', 'dhoti', 'lungi', 'traditional', 'ethnic']);
+            }),
+            'winter' => $clothes->filter(function ($cloth) {
+                return in_array(strtolower($cloth->category), ['jacket', 'sweater', 'hoodie', 'coat', 'blazer']);
+            }),
+            'dresses' => $clothes->filter(function ($cloth) {
+                return in_array(strtolower($cloth->category), ['dress', 'frock', 'gown', 'jumpsuit']);
+            }),
+            'other' => $clothes->filter(function ($cloth) {
+                return ! in_array(strtolower($cloth->category), [
+                    'shirt', 't-shirt', 'tshirt', 'blouse', 'top',
+                    'jeans', 'pants', 'trousers', 'leggings', 'shorts',
+                    'saree', 'kurta', 'dhoti', 'lungi', 'traditional', 'ethnic',
+                    'jacket', 'sweater', 'hoodie', 'coat', 'blazer',
+                    'dress', 'frock', 'gown', 'jumpsuit',
+                ]);
+            }),
+        ];
+    }
+
     private function getNearbyAdmins($latitude, $longitude, $radius = 50)
     {
-        // Remove is_active check
         $admins = Admin::whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->get();
@@ -118,12 +236,10 @@ class UserHomeController extends Controller
             );
         }
 
-        // Filter by radius and sort by distance
         $admins = $admins->filter(function ($admin) use ($radius) {
             return $admin->distance <= $radius;
         })->sortBy('distance');
 
-        // If no admins found within radius, get all with distance
         if ($admins->isEmpty()) {
             $admins = Admin::whereNotNull('latitude')
                 ->whereNotNull('longitude')
@@ -144,7 +260,7 @@ class UserHomeController extends Controller
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
-        $earthRadius = 6371; // Kilometers
+        $earthRadius = 6371;
 
         $latDelta = deg2rad($lat2 - $lat1);
         $lonDelta = deg2rad($lon2 - $lon1);
@@ -158,31 +274,286 @@ class UserHomeController extends Controller
         return round($earthRadius * $c, 2);
     }
 
-    private function getLocationFromIP()
+    public function categoryPage($type)
     {
-        try {
-            // Get client IP address
-            $ip = request()->ip();
+        $user = Auth::user();
+        $selectedAdminId = session()->get('selected_admin_id');
+        $selectedAdmin = Admin::find($selectedAdminId);
 
-            // Skip local IPs
-            if ($ip == '127.0.0.1' || $ip == '::1') {
-                return null;
-            }
-
-            // Use free IP API (you can replace with paid service)
-            $response = Http::get("http://ip-api.com/json/{$ip}");
-
-            if ($response->successful() && $response['status'] == 'success') {
-                return [
-                    'lat' => $response['lat'],
-                    'lng' => $response['lon'],
-                ];
-            }
-        } catch (\Exception $e) {
-            // Fallback to default
-            return null;
+        if (! $selectedAdmin) {
+            return redirect()->route('user.home')->with('error', 'Please select a collection center first');
         }
 
-        return null;
+        $clothes = Cloth::where('admin_id', $selectedAdminId)
+            ->where('quantity', '>', 0)
+            ->where('status', 'available');
+
+        // Filter by category type
+        switch ($type) {
+            case 'shirts':
+                $clothes->whereIn('category', ['shirt', 't-shirt', 'tshirt', 'blouse', 'top']);
+                $title = 'Shirts & Tops';
+                break;
+            case 'pants':
+                $clothes->whereIn('category', ['jeans', 'pants', 'trousers', 'leggings', 'shorts']);
+                $title = 'Pants & Jeans';
+                break;
+            case 'traditional':
+                $clothes->whereIn('category', ['saree', 'kurta', 'dhoti', 'lungi', 'traditional', 'ethnic']);
+                $title = 'Traditional Attire';
+                break;
+            case 'winter':
+                $clothes->whereIn('category', ['jacket', 'sweater', 'hoodie', 'coat', 'blazer']);
+                $title = 'Winter Wear';
+                break;
+            case 'dresses':
+                $clothes->whereIn('category', ['dress', 'frock', 'gown', 'jumpsuit']);
+                $title = 'Dresses & Gowns';
+                break;
+            case 'popular':
+                $clothes = $this->recommendationService->getPopularItems($selectedAdminId, 100);
+                $title = 'Most Popular Items';
+                break;
+            case 'recommended':
+                $clothes = $this->recommendationService->getPersonalizedRecommendations($selectedAdminId, 100);
+                $title = 'Recommended For You';
+                break;
+            case 'seasonal':
+                $season = $this->getCurrentSeason();
+                $clothes = $this->recommendationService->getSeasonalRecommendations($season, $selectedAdminId, 100);
+                $title = ucfirst($season).' Collection';
+                break;
+            default:
+                $clothes = $clothes->get();
+                $title = 'All Items';
+        }
+
+        if (! in_array($type, ['popular', 'recommended', 'seasonal'])) {
+            $clothes = $clothes->get();
+        }
+
+        return view('user.category', compact('clothes', 'title', 'selectedAdmin', 'type'));
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $selectedAdminId = session()->get('selected_admin_id');
+
+            if (! $selectedAdminId) {
+                return response()->json(['items' => [], 'total' => 0]);
+            }
+
+            // Save to search history (try-catch to prevent errors)
+            if ($request->search && strlen($request->search) >= 2) {
+                try {
+                    DB::table('user_search_history')->insert([
+                        'user_id' => Auth::id(),
+                        'search_term' => $request->search,
+                        'gender' => $request->gender,
+                        'size' => $request->size,
+                        'quality' => $request->quality,
+                        'category' => $request->category,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } catch (\Exception $e) {
+                    // Table might not exist yet, silently fail
+                }
+            }
+
+            // Save preferences (try-catch to prevent errors)
+            if ($request->gender && $request->gender != '') {
+                try {
+                    $existing = DB::table('user_preferences')
+                        ->where('user_id', Auth::id())
+                        ->where('preference_type', 'gender')
+                        ->where('preference_value', $request->gender)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('user_preferences')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'count' => $existing->count + 1,
+                                'last_used_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('user_preferences')->insert([
+                            'user_id' => Auth::id(),
+                            'preference_type' => 'gender',
+                            'preference_value' => $request->gender,
+                            'count' => 1,
+                            'last_used_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Table might not exist yet, silently fail
+                }
+            }
+
+            if ($request->size && $request->size != '') {
+                try {
+                    $existing = DB::table('user_preferences')
+                        ->where('user_id', Auth::id())
+                        ->where('preference_type', 'size')
+                        ->where('preference_value', $request->size)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('user_preferences')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'count' => $existing->count + 1,
+                                'last_used_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('user_preferences')->insert([
+                            'user_id' => Auth::id(),
+                            'preference_type' => 'size',
+                            'preference_value' => $request->size,
+                            'count' => 1,
+                            'last_used_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail
+                }
+            }
+
+            if ($request->quality && $request->quality != '') {
+                try {
+                    $existing = DB::table('user_preferences')
+                        ->where('user_id', Auth::id())
+                        ->where('preference_type', 'quality')
+                        ->where('preference_value', $request->quality)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('user_preferences')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'count' => $existing->count + 1,
+                                'last_used_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('user_preferences')->insert([
+                            'user_id' => Auth::id(),
+                            'preference_type' => 'quality',
+                            'preference_value' => $request->quality,
+                            'count' => 1,
+                            'last_used_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail
+                }
+            }
+
+            if ($request->category && $request->category != '') {
+                try {
+                    $existing = DB::table('user_preferences')
+                        ->where('user_id', Auth::id())
+                        ->where('preference_type', 'category')
+                        ->where('preference_value', $request->category)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('user_preferences')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'count' => $existing->count + 1,
+                                'last_used_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('user_preferences')->insert([
+                            'user_id' => Auth::id(),
+                            'preference_type' => 'category',
+                            'preference_value' => $request->category,
+                            'count' => 1,
+                            'last_used_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Silently fail
+                }
+            }
+
+            // Build the search query
+            $query = Cloth::where('admin_id', $selectedAdminId)
+                ->where('quantity', '>', 0)
+                ->where('status', 'available');
+
+            if ($request->search && $request->search != '') {
+                $query->where(function ($q) use ($request) {
+                    $q->where('name', 'like', '%'.$request->search.'%')
+                        ->orWhere('category', 'like', '%'.$request->search.'%')
+                        ->orWhere('description', 'like', '%'.$request->search.'%');
+                });
+            }
+
+            if ($request->gender && $request->gender != '') {
+                $query->where('gender', $request->gender);
+            }
+
+            if ($request->size && $request->size != '') {
+                $query->where('size', $request->size);
+            }
+
+            if ($request->quality && $request->quality != '') {
+                $query->where('quality', $request->quality);
+            }
+
+            // CHANGE THIS - exact match for category
+            if ($request->category && $request->category != '') {
+                $query->where('category', $request->category);  // Removed 'like' and '%'
+            }
+
+            $clothes = $query->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'items' => $clothes,
+                'total' => $clothes->count(),
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Search error: '.$e->getMessage());
+
+            return response()->json([
+                'items' => [],
+                'total' => 0,
+            ]);
+        }
+    }
+
+    public function getRecentSearches(Request $request)
+    {
+        try {
+            $searches = DB::table('user_search_history')
+                ->where('user_id', Auth::id())
+                ->whereNotNull('search_term')
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get()
+                ->unique('search_term')
+                ->pluck('search_term')
+                ->values();
+
+            return response()->json(['searches' => $searches]);
+        } catch (\Exception $e) {
+            return response()->json(['searches' => []]);
+        }
     }
 }

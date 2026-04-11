@@ -69,18 +69,36 @@ class RequestController extends Controller
     public function cancel($id)
     {
         try {
+            \Log::info('Cancel request attempt', [
+                'request_id' => $id,
+                'user_id' => Auth::id(),
+            ]);
+
             $clothRequest = ClothRequest::where('receiver_id', Auth::id())
+                ->where('id', $id)
                 ->where('status', 'pending')
-                ->findOrFail($id);
+                ->first();
+
+            \Log::info('Request found', ['request' => $clothRequest]);
+
+            if (! $clothRequest) {
+                return redirect()->route('user.my-requests')
+                    ->with('error', 'Request not found or cannot be cancelled');
+            }
 
             $clothRequest->status = 'cancelled';
             $clothRequest->save();
+
+            \Log::info('Request cancelled successfully');
 
             return redirect()->route('user.my-requests')
                 ->with('success', 'Request cancelled successfully');
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Error cancelling request');
+            \Log::error('Cancel error: '.$e->getMessage());
+
+            return redirect()->route('user.my-requests')
+                ->with('error', 'Error cancelling request: '.$e->getMessage());
         }
     }
 }

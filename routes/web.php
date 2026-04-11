@@ -51,6 +51,11 @@ Route::middleware('auth')->group(function () {
     // Cloth management
     Route::get('/user/cloth/{id}', [UserHomeController::class, 'clothDetail'])->name('user.cloth.detail');
     Route::post('/user/request-cloth', [UserHomeController::class, 'requestCloth'])->name('user.request.cloth');
+    Route::get('/category/{type}', [UserHomeController::class, 'categoryPage'])->name('user.category');
+
+    // Searching
+    Route::get('/user/search', [UserHomeController::class, 'search'])->name('user.search');
+    Route::get('/user/recent-searches', [UserHomeController::class, 'getRecentSearches'])->name('user.recent-searches');
 
     // Donation routes
     Route::get('/donate', [DonationController::class, 'create'])->name('user.donate');

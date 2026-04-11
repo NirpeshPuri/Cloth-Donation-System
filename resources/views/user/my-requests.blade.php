@@ -60,6 +60,7 @@
                                     @if ($request->status == 'pending')
                                         <form method="POST" action="{{ route('user.request.cancel', $request->id) }}"
                                             class="mt-2">
+
                                             @csrf
                                             <button type="submit" class="text-red-500 hover:text-red-700 text-sm"
                                                 onclick="return confirm('Cancel this request?')">
