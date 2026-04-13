@@ -31,6 +31,43 @@
         @endif
 
         <!-- Stats Cards -->
+        <div class="grid md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-store text-teal-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-teal-600">{{ $nearbyAdmins->count() }}</p>
+                        <p class="text-xs text-gray-500">Nearby Centers</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-tshirt text-teal-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-teal-600">{{ $availableClothes->sum('quantity') ?? 0 }}</p>
+                        <p class="text-xs text-gray-500">Available Items</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-hand-holding-heart text-teal-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-teal-600">{{ $totalRequestedItems ?? 0 }}</p>
+                        <p class="text-xs text-gray-500">My Requests</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- <!-- Stats Cards -->
         <div class="grid md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <i class="fas fa-store text-teal-600 text-3xl mb-3"></i>
@@ -50,9 +87,9 @@
                 <p class="text-3xl font-bold text-teal-600">{{ $totalRequestedItems ?? 0 }}</p>
                 <p class="text-gray-500 text-sm">Total items requested</p>
             </div>
-        </div>
+        </div> --}}
 
-        <!-- Receiver's Activity Section -->
+        {{-- <!-- Receiver's Activity Section -->
         @if (isset($selectedAdmin))
             <div class="mb-8">
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
@@ -92,7 +129,7 @@
                     </div>
                 </div>
             </div>
-        @endif
+        @endif --}}
 
         <!-- Selected Admin Banner -->
         @if (isset($selectedAdmin))
@@ -398,7 +435,7 @@
 
                         <div class="filter-group">
                             <label><i class="fas fa-venus-mars mr-1"></i> Gender</label>
-                            <select id="genderFilter">
+                            <select id="genderFilter" onchange="updateSizeOptions()">
                                 <option value="">All Genders</option>
                                 <option value="men">👨 Men</option>
                                 <option value="women">👩 Women</option>
@@ -411,12 +448,6 @@
                             <label><i class="fas fa-ruler mr-1"></i> Size</label>
                             <select id="sizeFilter">
                                 <option value="">All Sizes</option>
-                                <option value="XS">XS</option>
-                                <option value="S">S</option>
-                                <option value="M">M</option>
-                                <option value="L">L</option>
-                                <option value="XL">XL</option>
-                                <option value="XXL">XXL</option>
                             </select>
                         </div>
 
@@ -473,8 +504,6 @@
                             <label class="text-sm text-gray-600 mr-2">Sort by:</label>
                             <select id="sortBy" class="sort-select" onchange="applyFilters()">
                                 <option value="latest">Latest First</option>
-                                <option value="popular">Most Popular</option>
-                                <option value="recommended">Recommended</option>
                                 <option value="most_requested">Most Requested</option>
                             </select>
                         </div>
@@ -554,20 +583,19 @@
 
                 <!-- Personalized Recommendations Section -->
                 <div class="section-container">
-                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                    <div class="flex justify-between items-center mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800 flex items-center">
                                 <i class="fas fa-star text-yellow-500 mr-3"></i> Recommended For You
                             </h2>
                             <p class="text-gray-500 mt-1">Based on your preferences and search history</p>
                         </div>
-                        @if ($recommendedClothes && $recommendedClothes->count() > 4)
-                            <a href="{{ route('user.category', 'recommended') }}"
-                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
-                                View All <i class="fas fa-arrow-right"></i>
-                            </a>
-                        @endif
+                        <button onclick="refreshRecommendations()"
+                            class="text-teal-600 hover:text-teal-700 text-sm flex items-center gap-1">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
+
                     @if ($recommendedClothes && $recommendedClothes->count() > 0)
                         <div class="relative">
                             <div class="scroll-container" id="scroll-recommended">
@@ -576,7 +604,7 @@
                                         <div class="relative h-48 overflow-hidden">
                                             @if ($cloth->image_path)
                                                 <img src="{{ Storage::url($cloth->image_path) }}"
-                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                                    class="w-full h-full object-cover hover:scale-110 transition duration-300">
                                             @else
                                                 <div class="w-full h-full flex items-center justify-center bg-gray-100">
                                                     <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
@@ -584,8 +612,9 @@
                                             @endif
                                             @if ($cloth->quantity <= 3 && $cloth->quantity > 0)
                                                 <span
-                                                    class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Only
-                                                    {{ $cloth->quantity }} left</span>
+                                                    class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                                                    Only {{ $cloth->quantity }} left
+                                                </span>
                                             @endif
                                         </div>
                                         <div class="p-4">
@@ -597,15 +626,25 @@
                                                 <span class="text-xs text-teal-600">{{ $cloth->quantity }}
                                                     available</span>
                                             </div>
+                                            <div class="mt-2 flex items-center gap-2">
+                                                <span
+                                                    class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">{{ $cloth->gender ?? 'Unisex' }}</span>
+                                                @if ($cloth->quality)
+                                                    <span
+                                                        class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">{{ $cloth->quality }}</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                             @if ($recommendedClothes->count() > 4)
-                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-recommended')"><i
-                                        class="fas fa-chevron-left"></i></button>
-                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-recommended')"><i
-                                        class="fas fa-chevron-right"></i></button>
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-recommended')">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-recommended')">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
                             @endif
                         </div>
                     @else
@@ -1036,7 +1075,7 @@
 
     @push('scripts')
         <script>
-            let searchTimeout;
+            let searchTimeout; // Keep but won't be used for auto-search
 
             // Load recent searches on page load
             function loadRecentSearches() {
@@ -1064,7 +1103,7 @@
 
             function applyRecentSearch(term) {
                 document.getElementById('searchInput').value = term;
-                applyFilters();
+                applyFilters(); // This will trigger search on button click
             }
 
             function applyFilters() {
@@ -1075,12 +1114,13 @@
                 const category = document.getElementById('categoryFilter').value;
                 const sortBy = document.getElementById('sortBy').value;
 
+                // Show loading state
                 document.getElementById('searchResultsContainer').innerHTML = `
-        <div class="text-center py-12 col-span-full">
-            <i class="fas fa-spinner fa-spin text-teal-600 text-3xl"></i>
-            <p class="text-gray-500 mt-2">Searching...</p>
-        </div>
-    `;
+            <div class="text-center py-12 col-span-full">
+                <i class="fas fa-spinner fa-spin text-teal-600 text-3xl"></i>
+                <p class="text-gray-500 mt-2">Searching...</p>
+            </div>
+        `;
                 document.getElementById('originalSections').style.display = 'none';
 
                 const url =
@@ -1110,13 +1150,13 @@
                     .catch(error => {
                         console.error('Error:', error);
                         document.getElementById('searchResultsContainer').innerHTML = `
-            <div class="text-center py-12 col-span-full">
-                <i class="fas fa-exclamation-circle text-red-500 text-3xl mb-3"></i>
-                <p class="text-gray-500">Error loading results: ${error.message}</p>
-                <p class="text-gray-400 text-sm mt-2">Please check your connection and try again.</p>
-                <button onclick="applyFilters()" class="mt-4 bg-teal-600 text-white px-4 py-2 rounded-lg">Try Again</button>
-            </div>
-        `;
+                <div class="text-center py-12 col-span-full">
+                    <i class="fas fa-exclamation-circle text-red-500 text-3xl mb-3"></i>
+                    <p class="text-gray-500">Error loading results: ${error.message}</p>
+                    <p class="text-gray-400 text-sm mt-2">Please check your connection and try again.</p>
+                    <button onclick="applyFilters()" class="mt-4 bg-teal-600 text-white px-4 py-2 rounded-lg">Try Again</button>
+                </div>
+            `;
                     });
             }
 
@@ -1143,8 +1183,8 @@
                         ${cloth.image_path ?
                             `<img src="/storage/${cloth.image_path}" class="w-full h-full object-cover hover:scale-110 transition duration-300">` :
                             `<div class="w-full h-full flex items-center justify-center bg-gray-100">
-                                                                                                        <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
-                                                                                                    </div>`
+                                                                                                                                                        <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                                                                                                                    </div>`
                         }
                         ${cloth.quantity <= 3 && cloth.quantity > 0 ?
                             `<span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Only ${cloth.quantity} left</span>` : ''}
@@ -1182,23 +1222,27 @@
                 document.getElementById('categoryFilter').value = '';
                 document.getElementById('sortBy').value = 'latest';
 
+                // Reset size options based on gender (which is now empty)
+                updateSizeOptions();
+
                 document.getElementById('originalSections').style.display = 'block';
                 document.getElementById('searchResultsContainer').innerHTML = `
-            <div class="text-center py-12 col-span-full">
-                <i class="fas fa-search text-gray-400 text-5xl mb-3"></i>
-                <p class="text-gray-500">Use filters above to search for clothes</p>
-            </div>
-        `;
+        <div class="text-center py-12 col-span-full">
+            <i class="fas fa-search text-gray-400 text-5xl mb-3"></i>
+            <p class="text-gray-500">Use filters above to search for clothes</p>
+        </div>
+    `;
                 document.getElementById('resultCount').innerHTML = '';
             }
 
-            document.getElementById('searchInput').addEventListener('input', function() {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    if (this.value.length >= 2 || this.value.length === 0) {
-                        applyFilters();
-                    }
-                }, 500);
+            // REMOVED - No auto-search on input
+            // document.getElementById('searchInput').addEventListener('input', function() { ... });
+
+            // Optional: Allow Enter key to trigger search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
             });
 
             function viewDetails(clothId) {
@@ -1250,6 +1294,40 @@
                 }
             }
 
+            function refreshRecommendations() {
+                // Show loading state
+                const container = document.getElementById('scroll-recommended');
+                if (container) {
+                    container.innerHTML = `
+            <div class="flex justify-center items-center w-full py-12">
+                <i class="fas fa-spinner fa-spin text-teal-600 text-3xl"></i>
+                <span class="ml-3 text-gray-500">Refreshing recommendations...</span>
+            </div>
+        `;
+                }
+
+                fetch('{{ route('user.refresh-recommendations') }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Reload the page to show new recommendations
+                            window.location.reload();
+                        } else {
+                            alert('Failed to refresh recommendations. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error refreshing recommendations');
+                    });
+            }
+
             function selectAdmin(adminId) {
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -1267,6 +1345,50 @@
                 document.body.appendChild(form);
                 form.submit();
             }
+
+            // Size options based on gender (same as donation page)
+            const sizeOptions = {
+                men: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+                women: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+                kids: ['0-3M', '3-6M', '6-9M', '9-12M', '12-18M', '18-24M', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-7Y', '7-8Y',
+                    '8-9Y', '9-10Y', '10-11Y', '11-12Y', '12-13Y'
+                ],
+                unisex: ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+            };
+
+            // Function to update size options based on selected gender
+            function updateSizeOptions() {
+                const genderSelect = document.getElementById('genderFilter');
+                const sizeSelect = document.getElementById('sizeFilter');
+                const selectedGender = genderSelect.value;
+
+                // Clear current options
+                sizeSelect.innerHTML = '<option value="">All Sizes</option>';
+
+                // Add options based on selected gender
+                if (selectedGender && sizeOptions[selectedGender]) {
+                    sizeOptions[selectedGender].forEach(size => {
+                        const option = document.createElement('option');
+                        option.value = size;
+                        option.textContent = size;
+                        sizeSelect.appendChild(option);
+                    });
+                } else if (!selectedGender || selectedGender === '') {
+                    // If "All Genders" is selected, show all common sizes
+                    const allSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+                    allSizes.forEach(size => {
+                        const option = document.createElement('option');
+                        option.value = size;
+                        option.textContent = size;
+                        sizeSelect.appendChild(option);
+                    });
+                }
+            }
+
+            // Initialize size options on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                updateSizeOptions();
+            });
 
             // Load recent searches on page load
             loadRecentSearches();

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Cloth;
 use App\Models\ClothRequest;
-use App\Models\UserPreference;
 use App\Models\UserSearchHistory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +13,7 @@ class ReceiverRecommendationService
     /**
      * Get personalized recommendations for receiver based on their request history and preferences
      */
-    public function getPersonalizedRecommendations($adminId = null, $limit = 12)
+    public function getPersonalizedRecommendations($adminId = null, $limit = 8)
     {
         $user = Auth::user();
 
@@ -22,11 +21,12 @@ class ReceiverRecommendationService
             return collect();
         }
 
-        // Get user preferences from search history (gender, size, quality)
+        // Get user preferences from ALL search history (fresh from database)
         $preferences = $this->getUserCombinedPreferences($user->id);
 
         // If user has preferences, use them for recommendations
-        if (! empty($preferences['genders']) || ! empty($preferences['sizes']) || ! empty($preferences['qualities'])) {
+        if (! empty($preferences['categories']) || ! empty($preferences['genders']) ||
+            ! empty($preferences['sizes']) || ! empty($preferences['qualities'])) {
             $recommendations = $this->getRecommendationsByPreferences($preferences, $adminId, $limit);
             if ($recommendations->isNotEmpty()) {
                 return $recommendations;
@@ -47,12 +47,12 @@ class ReceiverRecommendationService
             }
         }
 
-        // If no history or preferences, return popular items
+        // If no history or preferences, return popular items (limited to 8)
         return $this->getPopularItems($adminId, $limit);
     }
 
     /**
-     * Get user preferences from search history and saved preferences
+     * Get user preferences from ALL search history (not just recent)
      */
     private function getUserCombinedPreferences($userId)
     {
@@ -63,60 +63,116 @@ class ReceiverRecommendationService
             'categories' => [],
         ];
 
-        // Get saved preferences from database
+        // Get ALL search history and count frequencies
         try {
-            $savedPreferences = UserPreference::where('user_id', $userId)
-                ->orderBy('count', 'desc')
-                ->orderBy('last_used_at', 'desc')
-                ->limit(10)
-                ->get();
+            $allSearches = UserSearchHistory::where('user_id', $userId)->get();
 
-            foreach ($savedPreferences as $pref) {
-                $type = $pref->preference_type;
-                $value = $pref->preference_value;
-
-                // Map preference_type to array key
-                $mappedType = $type.'s'; // gender -> genders, size -> sizes, quality -> qualities
-                if (isset($preferences[$mappedType])) {
-                    $preferences[$mappedType][$value] = ($preferences[$mappedType][$value] ?? 0) + $pref->count;
+            foreach ($allSearches as $search) {
+                if ($search->category) {
+                    $preferences['categories'][$search->category] = ($preferences['categories'][$search->category] ?? 0) + 1;
                 }
-            }
-        } catch (\Exception $e) {
-            // Table might not exist yet
-        }
-
-        // Get recent search history
-        try {
-            $recentSearches = UserSearchHistory::where('user_id', $userId)
-                ->orderBy('created_at', 'desc')
-                ->limit(20)
-                ->get();
-
-            foreach ($recentSearches as $search) {
                 if ($search->gender) {
-                    $preferences['genders'][$search->gender] = ($preferences['genders'][$search->gender] ?? 0) + 3;
+                    $preferences['genders'][$search->gender] = ($preferences['genders'][$search->gender] ?? 0) + 1;
                 }
                 if ($search->size) {
-                    $preferences['sizes'][$search->size] = ($preferences['sizes'][$search->size] ?? 0) + 2;
+                    $preferences['sizes'][$search->size] = ($preferences['sizes'][$search->size] ?? 0) + 1;
                 }
                 if ($search->quality) {
-                    $preferences['qualities'][$search->quality] = ($preferences['qualities'][$search->quality] ?? 0) + 2;
-                }
-                if ($search->category) {
-                    $preferences['categories'][$search->category] = ($preferences['categories'][$search->category] ?? 0) + 3;
+                    $preferences['qualities'][$search->quality] = ($preferences['qualities'][$search->quality] ?? 0) + 1;
                 }
             }
         } catch (\Exception $e) {
             // Table might not exist yet
         }
 
-        // Sort by count and get top preferences
+        // Sort by count (highest first)
         foreach ($preferences as $key => $value) {
             arsort($preferences[$key]);
-            $preferences[$key] = array_slice($preferences[$key], 0, 3, true);
+            $preferences[$key] = array_slice($preferences[$key], 0, 5, true);
         }
 
         return $preferences;
+    }
+
+    /**
+     * Get recommendations based on receiver's preferences - returns diverse results and changes position
+     */
+    private function getRecommendationsByPreferences($preferences, $adminId, $limit)
+    {
+        $allRecommendations = collect();
+        $usedClothIds = collect();
+
+        // Get top categories sorted by count (highest first)
+        $topCategories = ! empty($preferences['categories']) ? array_keys($preferences['categories']) : [];
+        $topGenders = ! empty($preferences['genders']) ? array_keys($preferences['genders']) : [];
+        $topSizes = ! empty($preferences['sizes']) ? array_keys($preferences['sizes']) : [];
+
+        // Calculate total weight for randomization
+        $totalWeight = array_sum($preferences['categories']) + array_sum($preferences['genders']);
+
+        // Level 1: Get items from top categories (weighted by search count)
+        foreach ($topCategories as $category) {
+            if ($allRecommendations->count() >= $limit) {
+                break;
+            }
+
+            $categoryCount = $preferences['categories'][$category] ?? 1;
+            $itemsToTake = max(1, min(3, ceil($limit * ($categoryCount / $totalWeight))));
+            $remaining = min($itemsToTake, $limit - $allRecommendations->count());
+
+            if ($remaining > 0) {
+                $query = Cloth::where('admin_id', $adminId)
+                    ->where('quantity', '>', 0)
+                    ->where('status', 'available')
+                    ->where('category', $category);
+
+                // Apply gender preference if available
+                if (! empty($topGenders)) {
+                    $query->whereIn('gender', $topGenders);
+                }
+
+                $more = $query->whereNotIn('id', $usedClothIds)
+                    ->inRandomOrder()  // Random order for variety
+                    ->limit($remaining)
+                    ->get();
+
+                $allRecommendations = $allRecommendations->merge($more);
+                $usedClothIds = $usedClothIds->merge($more->pluck('id'));
+            }
+        }
+
+        // Level 2: Add items by gender only (if still need more)
+        if ($allRecommendations->count() < $limit && ! empty($topGenders)) {
+            $remaining = $limit - $allRecommendations->count();
+            $more = Cloth::where('admin_id', $adminId)
+                ->where('quantity', '>', 0)
+                ->where('status', 'available')
+                ->whereIn('gender', $topGenders)
+                ->whereNotIn('id', $usedClothIds)
+                ->inRandomOrder()
+                ->limit($remaining)
+                ->get();
+            $allRecommendations = $allRecommendations->merge($more);
+            $usedClothIds = $usedClothIds->merge($more->pluck('id'));
+        }
+
+        // Level 3: Add recent items (if still need more)
+        if ($allRecommendations->count() < $limit) {
+            $remaining = $limit - $allRecommendations->count();
+            $more = Cloth::where('admin_id', $adminId)
+                ->where('quantity', '>', 0)
+                ->where('status', 'available')
+                ->whereNotIn('id', $usedClothIds)
+                ->orderBy('created_at', 'desc')
+                ->limit($remaining)
+                ->get();
+            $allRecommendations = $allRecommendations->merge($more);
+        }
+
+        // Shuffle the final collection to change positions
+        $allRecommendations = $allRecommendations->shuffle();
+
+        return $allRecommendations;
     }
 
     /**
@@ -149,84 +205,12 @@ class ReceiverRecommendationService
             }
         }
 
-        // Sort by frequency and get top preferences
         foreach ($preferences as $key => $value) {
             arsort($preferences[$key]);
             $preferences[$key] = array_slice($preferences[$key], 0, 3, true);
         }
 
         return $preferences;
-    }
-
-    /**
-     * Get recommendations based on receiver's preferences
-     */
-    private function getRecommendationsByPreferences($preferences, $adminId, $limit)
-    {
-        $query = Cloth::where('quantity', '>', 0)
-            ->where('status', 'available');
-
-        if ($adminId) {
-            $query->where('admin_id', $adminId);
-        }
-
-        // Apply preference filters by priority
-        $hasPreference = false;
-
-        // Priority 1: Match category (highest weight)
-        if (! empty($preferences['categories'])) {
-            $topCategory = array_key_first($preferences['categories']);
-            if ($topCategory) {
-                $query->where('category', 'like', '%'.$topCategory.'%');
-                $hasPreference = true;
-            }
-        }
-
-        // Priority 2: Match gender (highest weight)
-        if (! empty($preferences['genders'])) {
-            $topGender = array_key_first($preferences['genders']);
-            if ($topGender) {
-                $query->where('gender', $topGender);
-                $hasPreference = true;
-            }
-        }
-
-        // Priority 3: Match size (medium weight)
-        if (! empty($preferences['sizes'])) {
-            $topSize = array_key_first($preferences['sizes']);
-            if ($topSize) {
-                $query->where('size', $topSize);
-            }
-        }
-
-        // Priority 4: Match quality (lowest weight)
-        if (! empty($preferences['qualities'])) {
-            $topQuality = array_key_first($preferences['qualities']);
-            if ($topQuality) {
-                $query->where('quality', $topQuality);
-            }
-        }
-
-        $recommendations = $query->limit($limit)->get();
-
-        // If no recommendations with all filters, try with just gender
-        if ($recommendations->isEmpty() && $hasPreference) {
-            $query = Cloth::where('quantity', '>', 0)
-                ->where('status', 'available');
-
-            if ($adminId) {
-                $query->where('admin_id', $adminId);
-            }
-
-            if (! empty($preferences['categories'])) {
-                $topGender = array_key_first($preferences['categories']);
-                $query->where('category', 'like', '%'.$topCategory.'%');
-            }
-
-            $recommendations = $query->limit($limit)->get();
-        }
-
-        return $recommendations;
     }
 
     /**
@@ -243,12 +227,11 @@ class ReceiverRecommendationService
             $query->where('clothes.admin_id', $adminId);
         }
 
-        $popularItems = $query->groupBy('clothes.id', 'clothes.name', 'clothes.category', 'clothes.gender', 'clothes.size', 'clothes.color', 'clothes.image_path', 'clothes.quantity', 'clothes.quality', 'clothes.description', 'clothes.status', 'clothes.admin_id', 'clothes.donor_id', 'clothes.brand_id', 'clothes.cloth_type_id', 'clothes.created_at', 'clothes.updated_at', 'clothes.deleted_at')
+        $popularItems = $query->groupBy('clothes.id')
             ->orderBy(DB::raw('COUNT(requests.id)'), 'desc')
             ->limit($limit)
             ->get();
 
-        // If no popular items, get recent items
         if ($popularItems->isEmpty()) {
             $query = Cloth::where('quantity', '>', 0)
                 ->where('status', 'available');
@@ -270,7 +253,6 @@ class ReceiverRecommendationService
      */
     public function getFrequentlyRequestedTogether($clothId, $adminId = null, $limit = 6)
     {
-        // Find other receivers who requested this cloth
         $receiversWhoRequested = ClothRequest::where('cloth_id', $clothId)
             ->pluck('receiver_id');
 
@@ -278,7 +260,6 @@ class ReceiverRecommendationService
             return collect();
         }
 
-        // Find other clothes requested by these receivers
         $relatedClothIds = ClothRequest::whereIn('receiver_id', $receiversWhoRequested)
             ->where('cloth_id', '!=', $clothId)
             ->groupBy('cloth_id')

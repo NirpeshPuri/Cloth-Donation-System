@@ -344,16 +344,23 @@ class UserHomeController extends Controller
                 return response()->json(['items' => [], 'total' => 0]);
             }
 
-            // Save to search history (try-catch to prevent errors)
-            if ($request->search && strlen($request->search) >= 2) {
+            // Check if any filter is applied
+            $hasSearchTerm = $request->search && strlen($request->search) >= 2;
+            $hasGender = $request->gender && $request->gender != '';
+            $hasSize = $request->size && $request->size != '';
+            $hasQuality = $request->quality && $request->quality != '';
+            $hasCategory = $request->category && $request->category != '';
+
+            // Save to search history if ANY filter is applied (including filters without search term)
+            if ($hasSearchTerm || $hasGender || $hasSize || $hasQuality || $hasCategory) {
                 try {
                     DB::table('user_search_history')->insert([
                         'user_id' => Auth::id(),
-                        'search_term' => $request->search,
-                        'gender' => $request->gender,
-                        'size' => $request->size,
-                        'quality' => $request->quality,
-                        'category' => $request->category,
+                        'search_term' => $request->search ?? null,
+                        'gender' => $request->gender ?? null,
+                        'size' => $request->size ?? null,
+                        'quality' => $request->quality ?? null,
+                        'category' => $request->category ?? null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -363,7 +370,7 @@ class UserHomeController extends Controller
             }
 
             // Save preferences (try-catch to prevent errors)
-            if ($request->gender && $request->gender != '') {
+            if ($hasGender) {
                 try {
                     $existing = DB::table('user_preferences')
                         ->where('user_id', Auth::id())
@@ -395,7 +402,7 @@ class UserHomeController extends Controller
                 }
             }
 
-            if ($request->size && $request->size != '') {
+            if ($hasSize) {
                 try {
                     $existing = DB::table('user_preferences')
                         ->where('user_id', Auth::id())
@@ -427,7 +434,7 @@ class UserHomeController extends Controller
                 }
             }
 
-            if ($request->quality && $request->quality != '') {
+            if ($hasQuality) {
                 try {
                     $existing = DB::table('user_preferences')
                         ->where('user_id', Auth::id())
@@ -459,7 +466,7 @@ class UserHomeController extends Controller
                 }
             }
 
-            if ($request->category && $request->category != '') {
+            if ($hasCategory) {
                 try {
                     $existing = DB::table('user_preferences')
                         ->where('user_id', Auth::id())
@@ -496,32 +503,40 @@ class UserHomeController extends Controller
                 ->where('quantity', '>', 0)
                 ->where('status', 'available');
 
-            if ($request->search && $request->search != '') {
+            if ($hasSearchTerm) {
                 $query->where(function ($q) use ($request) {
                     $q->where('name', 'like', '%'.$request->search.'%')
-                        ->orWhere('category', 'like', '%'.$request->search.'%')
                         ->orWhere('description', 'like', '%'.$request->search.'%');
                 });
             }
 
-            if ($request->gender && $request->gender != '') {
+            if ($hasGender) {
                 $query->where('gender', $request->gender);
             }
 
-            if ($request->size && $request->size != '') {
+            if ($hasSize) {
                 $query->where('size', $request->size);
             }
 
-            if ($request->quality && $request->quality != '') {
+            if ($hasQuality) {
                 $query->where('quality', $request->quality);
             }
 
-            // CHANGE THIS - exact match for category
-            if ($request->category && $request->category != '') {
-                $query->where('category', $request->category);  // Removed 'like' and '%'
+            if ($hasCategory) {
+                $query->where('category', $request->category);
             }
 
-            $clothes = $query->orderBy('created_at', 'desc')->get();
+            // ========== FIXED SORTING - Apply BEFORE get() ==========
+            $sortBy = $request->sort_by ?? 'latest';
+
+            if ($sortBy === 'most_requested') {
+                $query->withCount('requests')->orderBy('requests_count', 'desc');
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+
+            // Now execute the query
+            $clothes = $query->get();
 
             return response()->json([
                 'items' => $clothes,
@@ -555,5 +570,13 @@ class UserHomeController extends Controller
         } catch (\Exception $e) {
             return response()->json(['searches' => []]);
         }
+    }
+
+    public function refreshRecommendations()
+    {
+        // Clear any cached recommendations
+        cache()->forget('recommendations_'.Auth::id());
+
+        return response()->json(['success' => true]);
     }
 }

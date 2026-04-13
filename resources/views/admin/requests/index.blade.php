@@ -112,7 +112,7 @@
                                             @csrf
                                             <button type="submit"
                                                 class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm"
-                                                onclick="return confirm('Approve this request? This will reduce inventory.')">
+                                                onclick="return confirm('Approve this request?')">
                                                 <i class="fas fa-check"></i> Approve
                                             </button>
                                         </form>

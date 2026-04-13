@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
     // Searching
     Route::get('/user/search', [UserHomeController::class, 'search'])->name('user.search');
     Route::get('/user/recent-searches', [UserHomeController::class, 'getRecentSearches'])->name('user.recent-searches');
+    Route::post('/user/refresh-recommendations', [UserHomeController::class, 'refreshRecommendations'])->name('user.refresh-recommendations');
 
     // Donation routes
     Route::get('/donate', [DonationController::class, 'create'])->name('user.donate');
