@@ -467,19 +467,9 @@
                             <label><i class="fas fa-tags mr-1"></i> Category</label>
                             <select id="categoryFilter">
                                 <option value="">All Categories</option>
-                                <option value="shirt">👕 Shirts</option>
-                                <option value="t-shirt">👕 T-Shirts</option>
-                                <option value="jeans">👖 Jeans</option>
-                                <option value="pants">👖 Pants</option>
-                                <option value="jacket">🧥 Jackets</option>
-                                <option value="sweater">🧥 Sweaters</option>
-                                <option value="dress">👗 Dresses</option>
-                                <option value="saree">👘 Saree</option>
-                                <option value="kurta">👘 Kurta</option>
-                                <option value="traditional">👘 Traditional</option>
-                                <option value="ethnic">👘 Ethnic Wear</option>
-                                <option value="winter">❄️ Winter Wear</option>
-                                <option value="summer">☀️ Summer Wear</option>
+                                @foreach ($categories as $cat)
+                                    <option value="{{ $cat['value'] }}">{{ $cat['label'] }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -1183,8 +1173,8 @@
                         ${cloth.image_path ?
                             `<img src="/storage/${cloth.image_path}" class="w-full h-full object-cover hover:scale-110 transition duration-300">` :
                             `<div class="w-full h-full flex items-center justify-center bg-gray-100">
-                                                                                                                                                        <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
-                                                                                                                                                    </div>`
+                                                                                                                                                                <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                                                                                                                            </div>`
                         }
                         ${cloth.quantity <= 3 && cloth.quantity > 0 ?
                             `<span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Only ${cloth.quantity} left</span>` : ''}

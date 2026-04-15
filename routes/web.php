@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DonationManageController;
 use App\Http\Controllers\Admin\RequestManageController;
 use App\Http\Controllers\AdminController;
@@ -112,5 +113,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/requests/bulk-approve', [RequestManageController::class, 'bulkApprove'])->name('requests.bulk-approve');
         Route::get('/requests/filter/{status}', [RequestManageController::class, 'filter'])->name('requests.filter');
         Route::post('/requests/search', [RequestManageController::class, 'search'])->name('requests.search');
+
+        // Category Management
+        Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+        Route::put('/categories/{index}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{index}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
 });

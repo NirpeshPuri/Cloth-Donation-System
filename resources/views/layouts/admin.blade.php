@@ -93,6 +93,12 @@
                     <span>Requests</span>
                 </a>
 
+                <a href="{{ route('admin.categories.index') }}"
+                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition {{ request()->routeIs('admin.categories.*') ? 'bg-teal-50 text-teal-700 border-r-4 border-teal-600' : '' }}">
+                    <i class="fas fa-tags w-5 mr-3"></i>
+                    <span>Categories</span>
+                </a>
+
                 <a href="#"
                     class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
                     <i class="fas fa-tshirt w-5 mr-3"></i>

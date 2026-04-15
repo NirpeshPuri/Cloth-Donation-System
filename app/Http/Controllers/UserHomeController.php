@@ -7,6 +7,7 @@ use App\Models\Cloth;
 use App\Models\ClothRequest;
 use App\Models\Donation;
 use App\Models\DonationItem;
+use App\Models\Setting;
 use App\Services\ReceiverRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -103,6 +104,9 @@ class UserHomeController extends Controller
             $query->where('donor_id', $user->id);
         })->sum('quantity');
 
+        // ========== ADD THIS ONE LINE ==========
+        $categories = Setting::getCategories();
+
         return view('user.home', compact(
             'nearbyAdmins',
             'selectedAdmin',
@@ -122,7 +126,8 @@ class UserHomeController extends Controller
             'totalDonatedItems',
             'userLatitude',
             'userLongitude',
-            'currentSeason'
+            'currentSeason',
+            'categories'
         ));
     }
 

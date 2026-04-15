@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Admin;
 use App\Models\Donation;
 use App\Models\DonationItem;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
-  // ADD THIS LINE
+// ADD THIS LINE
 
 class DonationController extends Controller
 {
@@ -47,6 +48,9 @@ class DonationController extends Controller
 
             Log::info('Admins found', ['count' => $admins->count()]);
 
+            // ========== ADD THIS LINE ==========
+            $categories = Setting::getCategories();
+
             // Calculate distance for each admin
             foreach ($admins as $admin) {
                 $admin->distance = $this->calculateDistance(
@@ -64,7 +68,7 @@ class DonationController extends Controller
 
             Log::info('=== DONATION CREATE METHOD COMPLETED ===');
 
-            return view('user.donate', compact('admins', 'userLatitude', 'userLongitude'));
+            return view('user.donate', compact('admins', 'userLatitude', 'userLongitude', 'categories'));
 
         } catch (\Exception $e) {
             Log::error('ERROR in create(): '.$e->getMessage());
