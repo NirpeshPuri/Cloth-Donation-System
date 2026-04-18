@@ -11,6 +11,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\UserHomeController;
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('', function () {
@@ -38,6 +39,12 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // ==================== PROTECTED USER ROUTES (Requires Authentication) ====================
 
 Route::middleware('auth')->group(function () {
+
+    Route::get('/profile', [UserProfileController::class, 'edit'])->name('user.profile');
+    Route::post('/profile', [UserProfileController::class, 'update'])->name('user.profile.update');
+    Route::post('/profile/location', [UserProfileController::class, 'updateLocation'])->name('user.location.update');
+    Route::post('/profile/password', [UserProfileController::class, 'changePassword'])
+        ->name('user.password.change');
 
     // User Home/Dashboard
     Route::get('/user/home', [UserHomeController::class, 'index'])->name('user.home');

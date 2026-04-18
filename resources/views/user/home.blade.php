@@ -824,6 +824,75 @@
                     @endif
                 </div>
 
+                <!-- Shoes Section -->
+                <div class="section-container">
+                    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-shoe-prints text-teal-600 mr-3"></i> Shoes & Footwear
+                            </h2>
+                            <p class="text-gray-500 mt-1">Comfortable footwear for everyday use</p>
+                        </div>
+                        @if ($categoryGroups['shoes']->count() > 4)
+                            <a href="{{ route('user.category', 'shoes') }}"
+                                class="text-teal-600 hover:text-teal-700 text-sm font-semibold flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </a>
+                        @endif
+                    </div>
+
+                    @if ($categoryGroups['shoes']->count() > 0)
+                        <div class="relative">
+                            <div class="scroll-container" id="scroll-shoes">
+                                @foreach ($categoryGroups['shoes'] as $cloth)
+                                    <div class="product-card" onclick="viewDetails({{ $cloth->id }})">
+                                        <div class="relative h-48 overflow-hidden">
+                                            @if ($cloth->image_path)
+                                                <img src="{{ Storage::url($cloth->image_path) }}"
+                                                    class="w-full h-full object-cover hover:scale-110 transition">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                                    <i class="fas fa-shoe-prints text-teal-400 text-4xl"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        <div class="p-4">
+                                            <h3 class="font-bold text-gray-800">{{ $cloth->name }}</h3>
+                                            <p class="text-sm text-gray-500">
+                                                Size: {{ $cloth->size ?? 'Various' }}
+                                            </p>
+
+                                            <div class="flex justify-between items-center mt-2">
+                                                <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                                    {{ $cloth->gender ?? 'Unisex' }}
+                                                </span>
+                                                <span class="text-xs text-gray-500">
+                                                    {{ $cloth->quantity }} left
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            @if ($categoryGroups['shoes']->count() > 4)
+                                <button class="scroll-btn scroll-left" onclick="scrollLeft('scroll-shoes')">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="scroll-btn scroll-right" onclick="scrollRight('scroll-shoes')">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            @endif
+                        </div>
+                    @else
+                        <div class="empty-section">
+                            <i class="fas fa-shoe-prints text-gray-400 text-5xl mb-3"></i>
+                            <p class="text-gray-500">No shoes available at this collection center.</p>
+                        </div>
+                    @endif
+                </div>
+
                 <!-- Traditional Section -->
                 <div class="section-container">
                     <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -1173,8 +1242,8 @@
                         ${cloth.image_path ?
                             `<img src="/storage/${cloth.image_path}" class="w-full h-full object-cover hover:scale-110 transition duration-300">` :
                             `<div class="w-full h-full flex items-center justify-center bg-gray-100">
-                                                                                                                                                                <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
-                                                                                                                                                            </div>`
+                                                                                                                                                                                <i class="fas fa-tshirt text-teal-400 text-4xl"></i>
+                                                                                                                                                                            </div>`
                         }
                         ${cloth.quantity <= 3 && cloth.quantity > 0 ?
                             `<span class="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Only ${cloth.quantity} left</span>` : ''}

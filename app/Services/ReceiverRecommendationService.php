@@ -97,20 +97,103 @@ class ReceiverRecommendationService
     /**
      * Get recommendations based on receiver's preferences - returns diverse results and changes position
      */
+    // private function getRecommendationsByPreferences($preferences, $adminId, $limit)
+    // {
+    //     $allRecommendations = collect();
+    //     $usedClothIds = collect();
+
+    //     // Get top categories sorted by count (highest first)
+    //     $topCategories = ! empty($preferences['categories']) ? array_keys($preferences['categories']) : [];
+    //     $topGenders = ! empty($preferences['genders']) ? array_keys($preferences['genders']) : [];
+    //     $topSizes = ! empty($preferences['sizes']) ? array_keys($preferences['sizes']) : [];
+
+    //     // Calculate total weight for randomization
+    //     $totalWeight = array_sum($preferences['categories']) + array_sum($preferences['genders']);
+
+    //     // Level 1: Get items from top categories (weighted by search count)
+    //     foreach ($topCategories as $category) {
+    //         if ($allRecommendations->count() >= $limit) {
+    //             break;
+    //         }
+
+    //         $categoryCount = $preferences['categories'][$category] ?? 1;
+    //         $itemsToTake = max(1, min(3, ceil($limit * ($categoryCount / $totalWeight))));
+    //         $remaining = min($itemsToTake, $limit - $allRecommendations->count());
+
+    //         if ($remaining > 0) {
+    //             $query = Cloth::where('admin_id', $adminId)
+    //                 ->where('quantity', '>', 0)
+    //                 ->where('status', 'available')
+    //                 ->where('category', $category);
+
+    //             // Apply gender preference if available
+    //             if (! empty($topGenders)) {
+    //                 $query->whereIn('gender', $topGenders);
+    //             }
+
+    //             $more = $query->whereNotIn('id', $usedClothIds)
+    //                 ->inRandomOrder()  // Random order for variety
+    //                 ->limit($remaining)
+    //                 ->get();
+
+    //             $allRecommendations = $allRecommendations->merge($more);
+    //             $usedClothIds = $usedClothIds->merge($more->pluck('id'));
+    //         }
+    //     }
+
+    //     // Level 2: Add items by gender only (if still need more)
+    //     if ($allRecommendations->count() < $limit && ! empty($topGenders)) {
+    //         $remaining = $limit - $allRecommendations->count();
+    //         $more = Cloth::where('admin_id', $adminId)
+    //             ->where('quantity', '>', 0)
+    //             ->where('status', 'available')
+    //             ->whereIn('gender', $topGenders)
+    //             ->whereNotIn('id', $usedClothIds)
+    //             ->inRandomOrder()
+    //             ->limit($remaining)
+    //             ->get();
+    //         $allRecommendations = $allRecommendations->merge($more);
+    //         $usedClothIds = $usedClothIds->merge($more->pluck('id'));
+    //     }
+
+    //     // Level 3: Add recent items (if still need more)
+    //     if ($allRecommendations->count() < $limit) {
+    //         $remaining = $limit - $allRecommendations->count();
+    //         $more = Cloth::where('admin_id', $adminId)
+    //             ->where('quantity', '>', 0)
+    //             ->where('status', 'available')
+    //             ->whereNotIn('id', $usedClothIds)
+    //             ->orderBy('created_at', 'desc')
+    //             ->limit($remaining)
+    //             ->get();
+    //         $allRecommendations = $allRecommendations->merge($more);
+    //     }
+
+    //     // Shuffle the final collection to change positions
+    //     $allRecommendations = $allRecommendations->shuffle();
+
+    //     return $allRecommendations;
+    // }
+
     private function getRecommendationsByPreferences($preferences, $adminId, $limit)
     {
         $allRecommendations = collect();
         $usedClothIds = collect();
 
-        // Get top categories sorted by count (highest first)
+        // Get top preferences
         $topCategories = ! empty($preferences['categories']) ? array_keys($preferences['categories']) : [];
         $topGenders = ! empty($preferences['genders']) ? array_keys($preferences['genders']) : [];
         $topSizes = ! empty($preferences['sizes']) ? array_keys($preferences['sizes']) : [];
 
-        // Calculate total weight for randomization
+        // Calculate total weight
         $totalWeight = array_sum($preferences['categories']) + array_sum($preferences['genders']);
+        if ($totalWeight == 0) {
+            $totalWeight = 1;
+        }
 
-        // Level 1: Get items from top categories (weighted by search count)
+        // ===============================
+        // LEVEL 1: Category-based items
+        // ===============================
         foreach ($topCategories as $category) {
             if ($allRecommendations->count() >= $limit) {
                 break;
@@ -126,13 +209,12 @@ class ReceiverRecommendationService
                     ->where('status', 'available')
                     ->where('category', $category);
 
-                // Apply gender preference if available
                 if (! empty($topGenders)) {
                     $query->whereIn('gender', $topGenders);
                 }
 
                 $more = $query->whereNotIn('id', $usedClothIds)
-                    ->inRandomOrder()  // Random order for variety
+                    ->inRandomOrder()
                     ->limit($remaining)
                     ->get();
 
@@ -141,9 +223,12 @@ class ReceiverRecommendationService
             }
         }
 
-        // Level 2: Add items by gender only (if still need more)
+        // ===============================
+        // LEVEL 2: Gender-based items
+        // ===============================
         if ($allRecommendations->count() < $limit && ! empty($topGenders)) {
             $remaining = $limit - $allRecommendations->count();
+
             $more = Cloth::where('admin_id', $adminId)
                 ->where('quantity', '>', 0)
                 ->where('status', 'available')
@@ -152,13 +237,17 @@ class ReceiverRecommendationService
                 ->inRandomOrder()
                 ->limit($remaining)
                 ->get();
+
             $allRecommendations = $allRecommendations->merge($more);
             $usedClothIds = $usedClothIds->merge($more->pluck('id'));
         }
 
-        // Level 3: Add recent items (if still need more)
+        // ===============================
+        // LEVEL 3: Recent items fallback
+        // ===============================
         if ($allRecommendations->count() < $limit) {
             $remaining = $limit - $allRecommendations->count();
+
             $more = Cloth::where('admin_id', $adminId)
                 ->where('quantity', '>', 0)
                 ->where('status', 'available')
@@ -166,13 +255,102 @@ class ReceiverRecommendationService
                 ->orderBy('created_at', 'desc')
                 ->limit($remaining)
                 ->get();
+
             $allRecommendations = $allRecommendations->merge($more);
         }
 
-        // Shuffle the final collection to change positions
-        $allRecommendations = $allRecommendations->shuffle();
+        // ===============================
+        // ⭐ COSINE SIMILARITY (INLINE FORMULA)
+        // ===============================
+        if ($allRecommendations->isNotEmpty()) {
+
+            $userVector = $this->buildUserVector($preferences);
+
+            $allRecommendations = $allRecommendations->map(function ($item) use ($userVector) {
+
+                $itemVector = $this->buildItemVector($item);
+
+                // ---- Cosine Similarity Calculation ----
+                $dotProduct = 0;
+                $magnitudeA = 0;
+                $magnitudeB = 0;
+
+                $keys = array_unique(array_merge(array_keys($userVector), array_keys($itemVector)));
+
+                foreach ($keys as $key) {
+                    $a = $userVector[$key] ?? 0;
+                    $b = $itemVector[$key] ?? 0;
+
+                    $dotProduct += $a * $b;
+                    $magnitudeA += $a * $a;
+                    $magnitudeB += $b * $b;
+                }
+
+                if ($magnitudeA > 0 && $magnitudeB > 0) {
+                    $similarity = $dotProduct / (sqrt($magnitudeA) * sqrt($magnitudeB));
+                } else {
+                    $similarity = 0;
+                }
+
+                $item->similarity_score = $similarity;
+
+                return $item;
+            });
+
+            // Sort by similarity score
+            $allRecommendations = $allRecommendations
+                ->sortByDesc('similarity_score')
+                ->values()
+                ->shuffle();
+        }
 
         return $allRecommendations;
+    }
+
+    private function buildItemVector($cloth)
+    {
+        $vector = [];
+
+        if ($cloth->category) {
+            $vector['cat_'.$cloth->category] = 1;
+        }
+
+        if ($cloth->gender) {
+            $vector['gender_'.$cloth->gender] = 1;
+        }
+
+        if ($cloth->size) {
+            $vector['size_'.$cloth->size] = 1;
+        }
+
+        if ($cloth->quality) {
+            $vector['quality_'.$cloth->quality] = 1;
+        }
+
+        return $vector;
+    }
+
+    private function buildUserVector($preferences)
+    {
+        $vector = [];
+
+        foreach ($preferences['categories'] as $key => $value) {
+            $vector['cat_'.$key] = $value;
+        }
+
+        foreach ($preferences['genders'] as $key => $value) {
+            $vector['gender_'.$key] = $value;
+        }
+
+        foreach ($preferences['sizes'] as $key => $value) {
+            $vector['size_'.$key] = $value;
+        }
+
+        foreach ($preferences['qualities'] as $key => $value) {
+            $vector['quality_'.$key] = $value;
+        }
+
+        return $vector;
     }
 
     /**

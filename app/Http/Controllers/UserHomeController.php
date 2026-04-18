@@ -207,6 +207,11 @@ class UserHomeController extends Controller
             'pants' => $clothes->filter(function ($cloth) {
                 return in_array(strtolower($cloth->category), ['jeans', 'pants', 'trousers', 'leggings', 'shorts']);
             }),
+            'shoes' => $clothes->filter(function ($cloth) {
+                return in_array(strtolower($cloth->category), [
+                    'shoes', 'shoe', 'sneakers', 'boots', 'sandals', 'slippers',
+                ]);
+            }),
             'traditional' => $clothes->filter(function ($cloth) {
                 return in_array(strtolower($cloth->category), ['saree', 'kurta', 'dhoti', 'lungi', 'traditional', 'ethnic']);
             }),
