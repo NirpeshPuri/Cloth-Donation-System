@@ -48,15 +48,18 @@
                     <a href="{{ route('user.my-donations') }}" class="text-gray-700 hover:text-teal-600">My
                         Donations</a>
                     <a href="{{ route('user.my-requests') }}" class="text-gray-700 hover:text-teal-600">My Requests</a>
+                    <a href="{{ route('user.donate-money') }}" class="text-gray-700 hover:text-teal-600">
+                        Donate Money
+                    </a>
                     <a href="{{ route('user.profile') }}" class="text-gray-700 hover:text-teal-600">Profile</a>
                 </div>
 
                 <!-- RIGHT SIDE -->
                 <div class="flex items-center space-x-4">
 
-                    <span class="text-gray-700 hidden md:inline">
+                    {{-- <span class="text-gray-700 hidden md:inline">
                         Welcome, {{ Auth::user()->name }}!
-                    </span>
+                    </span> --}}
 
                     <!-- PROFILE ICON (CLICK = OPEN MODAL) -->
                     <img id="openProfileModal"

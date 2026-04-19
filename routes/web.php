@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\RequestManageController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\EsewaController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\RequestController;
@@ -85,6 +86,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-requests', [RequestController::class, 'myRequests'])->name('user.my-requests');
     Route::get('/request/{id}', [RequestController::class, 'show'])->name('user.request.show');
     Route::post('/request/{id}/cancel', [RequestController::class, 'cancel'])->name('user.request.cancel');
+
+    // Esewa and Khalti
+    Route::get('/donate-money', function () {
+        return view('user.donate-money');
+    })->name('user.donate-money');
+    Route::post('/esewa/store', [EsewaController::class, 'store'])->name('esewa.store');
+    Route::get('/esewa/pay', [EsewaController::class, 'pay'])->name('esewa.pay');
+    Route::get('/esewa/success', [EsewaController::class, 'success'])->name('esewa.success');
+    Route::get('/esewa/failure', [EsewaController::class, 'failure'])->name('esewa.failure');
 });
 
 Route::get('/admin/{id}/edit', [AdminController::class, 'edit'])->name('admin.edit');
