@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EsewaKhalti;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class EsewaController extends Controller
 {
@@ -144,4 +145,126 @@ class EsewaController extends Controller
             return false;
         }
     }
+
+    // --------< This part is of Khalti >----------
+    // public function initiate(Request $request)
+    // {
+    //     try {
+    //         $amount = $request->input('amount');
+
+    //         $response = Http::withOptions([
+    //             'verify' => false,
+    //             'curl' => [
+    //                 CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+    //             ],
+    //         ])->timeout(30) // increase timeout
+    //             ->withHeaders([
+    //                 'Authorization' => 'Key '.config('services.khalti.secret'),
+    //                 'Content-Type' => 'application/json',
+    //             ])->post('https://a.khalti.com/api/v2/epayment/initiate/', [
+    //                 'return_url' => route('khalti.verify'),
+    //                 'website_url' => url('/'),
+    //                 'amount' => $request->amount * 100,
+    //                 'purchase_order_id' => uniqid(),
+    //                 'purchase_order_name' => 'Donation',
+    //             ]);
+
+    //         $data = $response->json();
+
+    //         if (! $response->successful()) {
+    //             return response()->json([
+    //                 'error' => 'Khalti failed',
+    //                 'details' => $data,
+    //             ]);
+    //         }
+
+    //         // ✅ SAVE WITH CORRECT pidx
+    //         EsewaKhalti::create([
+    //             'user_id' => auth()->id(),
+    //             'amount' => $amount,
+    //             'transaction_id' => $data['pidx'], // ✅ correct
+    //             'payment_status' => 'pending',
+    //         ]);
+
+    //         return response()->json([
+    //             'payment_url' => $data['payment_url'],
+    //         ]);
+
+    //     } catch (\Throwable $e) {
+    //         return response()->json([
+    //             'error' => $e->getMessage(),
+    //         ]);
+    //     }
+    // }
+
+    // public function verify(Request $request)
+    // {
+    //     // $session = session('khalti');
+
+    //     // if (! $session) {
+    //     //     return redirect()->route('esewa.failure')
+    //     //         ->with('error', 'Session expired');
+    //     // }
+
+    //     $pidx = $request->pidx;
+
+    //     $payment = EsewaKhalti::where('transaction_id', $pidx)->first();
+
+    //     if (! $payment) {
+    //         return redirect()->route('esewa.failure')
+    //             ->with('error', 'Payment record not found');
+    //     }
+
+    //     $response = Http::withOptions([
+    //         'verify' => false,
+    //         'curl' => [
+    //             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+    //         ],
+    //     ])->timeout(60)
+    //         ->withHeaders([
+    //             'Authorization' => 'Key '.config('services.khalti.secret'),
+    //             'Content-Type' => 'application/json',
+    //         ])->post('https://a.khalti.com/api/v2/epayment/lookup/', [
+    //             'pidx' => $request->pidx,
+    //         ]);
+
+    //     $data = $response->json();
+
+    //     if (($data['status'] ?? null) === 'Completed') {
+
+    //         $amount = $data['total_amount'] / 100; // convert paisa → rupees
+
+    //         $payment->update([
+    //             'payment_status' => 'completed',
+    //             'amount' => $amount,
+    //         ]);
+
+    //         return redirect()->route('khalti.success', [
+    //             'pidx' => $pidx]);
+    //     }
+
+    //     $payment->update([
+    //         'payment_status' => 'failed',
+    //     ]);
+
+    //     return redirect()->route('esewa.failure')
+    //         ->with('error', 'Payment failed');
+    // }
+
+    // public function khaltiSuccess(Request $request)
+    // {
+    //     $pidx = $request->pidx;
+
+    //     $payment = EsewaKhalti::where('transaction_id', $pidx)->first();
+
+    //     if (! $payment) {
+    //         return redirect()->route('esewa.failure')
+    //             ->with('error', 'Payment record not found');
+    //     }
+
+    //     return view('user.payment_success', [
+    //         'transaction_id' => $payment->transaction_id,
+    //         'amount' => $payment->amount,
+    //     ]);
+    // }
 }

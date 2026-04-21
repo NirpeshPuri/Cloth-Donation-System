@@ -57,7 +57,7 @@
 
 @push('scripts')
     <!-- Khalti Script -->
-    <script src="https://khalti.com/static/khalti-checkout.js"></script>
+    {{-- <script src="https://khalti.com/static/khalti-checkout.js"></script> --}}
 
     <script>
         // ================= eSewa Redirect =================
@@ -85,28 +85,7 @@
                 });
         }
 
-        // ================= Khalti Config =================
-        var config = {
-            "publicKey": "YOUR_PUBLIC_KEY",
-            "productIdentity": "donation",
-            "productName": "ThreadsOfHope Donation",
-            "productUrl": "http://localhost:8000",
-            "eventHandler": {
-                onSuccess(payload) {
-                    alert("Payment Successful!");
-                    console.log(payload);
-                },
-                onError(error) {
-                    console.log(error);
-                },
-                onClose() {
-                    console.log('widget closed');
-                }
-            }
-        };
-
-        var checkout = new KhaltiCheckout(config);
-
+        // ================= Khalti (NEW API FLOW) =================
         document.getElementById("khaltiBtn").onclick = function() {
             let amount = document.getElementById('amount').value;
 
@@ -115,9 +94,39 @@
                 return;
             }
 
-            checkout.show({
-                amount: amount * 100
-            });
+            fetch("/khalti/initiate", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        amount: amount
+                    })
+                })
+                .then(async res => {
+                    let text = await res.text(); // 👈 read raw response
+                    console.log(text); // 👈 SEE ERROR HERE
+
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        throw new Error("Invalid JSON: " + text);
+                    }
+                })
+                .then(data => {
+                    console.log("FULL RESPONSE:", data); // 👈 ADD THIS
+
+                    if (data.payment_url) {
+                        window.location.href = data.payment_url;
+                    } else {
+                        alert("Error: " + JSON.stringify(data));
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error: " + err.message);
+                });
         };
     </script>
 @endpush

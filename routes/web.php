@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EsewaController;
+use App\Http\Controllers\KhaltiController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\RequestController;
@@ -91,10 +92,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/donate-money', function () {
         return view('user.donate-money');
     })->name('user.donate-money');
+
+    // Esewa
     Route::post('/esewa/store', [EsewaController::class, 'store'])->name('esewa.store');
     Route::get('/esewa/pay', [EsewaController::class, 'pay'])->name('esewa.pay');
     Route::get('/esewa/success', [EsewaController::class, 'success'])->name('esewa.success');
     Route::get('/esewa/failure', [EsewaController::class, 'failure'])->name('esewa.failure');
+
+    // Khalti
+    Route::post('/khalti/initiate', [KhaltiController::class, 'initiate']);
+    Route::get('/khalti/verify', [KhaltiController::class, 'verify'])->name('khalti.verify');
+    Route::get('/khalti/success', [KhaltiController::class, 'khaltiSuccess'])->name('khalti.success');
+    Route::get('/khalti/failure', [KhaltiController::class, 'khaltiFailure'])->name('khalti.failure');
 });
 
 Route::get('/admin/{id}/edit', [AdminController::class, 'edit'])->name('admin.edit');
