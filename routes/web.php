@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DonationManageController;
+use App\Http\Controllers\Admin\MoneyDonationController;
 use App\Http\Controllers\Admin\RequestManageController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
@@ -145,5 +146,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/categories/{index}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{index}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+        // Money Donation Report
+        Route::get('/money-donations', [MoneyDonationController::class, 'index'])->name('money-donations.index');
     });
 });

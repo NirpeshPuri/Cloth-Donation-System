@@ -99,6 +99,12 @@
                     <span>Categories</span>
                 </a>
 
+                <a href="{{ route('admin.money-donations.index') }}"
+                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
+                    <i class="fas fa-money-bill-wave w-5 mr-3"></i>
+                    <span>Money Donations</span>
+                </a>
+
                 <a href="#"
                     class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
                     <i class="fas fa-tshirt w-5 mr-3"></i>
