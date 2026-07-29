@@ -79,7 +79,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-xs uppercase tracking-wide">Approved Requests</p>
-                        <p class="text-2xl md:text-3xl font-bold text-blue-600">{{ $approvedRequests ?? 0 }}</p>
+                        <p class="text-2xl md:text-3xl font-bold text-blue-600">{{ $completedRequests ?? 0 }}</p>
                     </div>
                     <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-check-double text-blue-600 text-lg"></i>
@@ -140,7 +140,7 @@
                 </div>
             </a>
 
-            <a href="#"
+            <a href="{{ route('admin.inventory.index') }}"
                 class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition group border-l-4 border-purple-500">
                 <div class="flex items-center justify-between">
                     <div>
@@ -153,16 +153,18 @@
                 </div>
             </a>
 
-            <a href="#"
-                class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition group border-l-4 border-blue-500">
+            <a href="{{ route('admin.money-donations.index') }}"
+                class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition group border-l-4 border-green-500">
                 <div class="flex items-center justify-between">
                     <div>
-                        <i class="fas fa-store text-blue-600 text-2xl mb-2 block"></i>
-                        <h3 class="font-bold text-gray-800">Collection Centers</h3>
-                        <p class="text-gray-500 text-xs mt-1">Manage centers</p>
-                        <p class="text-blue-600 text-xs mt-2 font-semibold">Total: {{ $totalAdmins ?? 0 }} centers</p>
+                        <i class="fas fa-hand-holding-usd text-green-600 text-2xl mb-2 block"></i>
+                        <h3 class="font-bold text-gray-800">Financial Donations</h3>
+                        <p class="text-gray-500 text-xs mt-1">Manage financial donations</p>
+                        <p class="text-green-600 text-xs mt-2 font-semibold">
+                            Total: {{ $totalMoneyDonations ?? 0 }} donations
+                        </p>
                     </div>
-                    <i class="fas fa-arrow-right text-blue-600 text-xl group-hover:translate-x-1 transition"></i>
+                    <i class="fas fa-arrow-right text-green-600 text-xl group-hover:translate-x-1 transition"></i>
                 </div>
             </a>
         </div>

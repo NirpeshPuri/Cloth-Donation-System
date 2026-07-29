@@ -102,29 +102,29 @@
                 <a href="{{ route('admin.money-donations.index') }}"
                     class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
                     <i class="fas fa-money-bill-wave w-5 mr-3"></i>
-                    <span>Money Donations</span>
+                    <span>Financial Donations</span>
                 </a>
 
-                <a href="#"
-                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
+                <a href="{{ route('admin.inventory.index') }}"
+                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition {{ request()->routeIs('admin.inventory.*') ? 'bg-teal-50 text-teal-700 border-r-4 border-teal-600' : '' }}">
                     <i class="fas fa-tshirt w-5 mr-3"></i>
                     <span>Inventory</span>
                 </a>
 
-                <a href="#"
-                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
+                <a href="{{ route('admin.users.index') }}"
+                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition {{ request()->routeIs('admin.users.*') ? 'bg-teal-50 text-teal-700 border-r-4 border-teal-600' : '' }}">
                     <i class="fas fa-users w-5 mr-3"></i>
                     <span>Users</span>
                 </a>
 
-                <a href="#"
-                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
+                <a href="{{ route('admin.reports.index') }}"
+                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition {{ request()->routeIs('admin.reports.*') ? 'bg-teal-50 text-teal-700 border-r-4 border-teal-600' : '' }}">
                     <i class="fas fa-chart-line w-5 mr-3"></i>
                     <span>Reports</span>
                 </a>
 
-                <a href="#"
-                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition">
+                <a href="{{ route('admin.settings.index') }}"
+                    class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition {{ request()->routeIs('admin.settings.*') ? 'bg-teal-50 text-teal-700 border-r-4 border-teal-600' : '' }}">
                     <i class="fas fa-cog w-5 mr-3"></i>
                     <span>Settings</span>
                 </a>

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Cloth;
+use App\Models\ClothRequest;
 use App\Models\Donation;
+use App\Models\EsewaKhalti;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -52,14 +54,22 @@ class AdminAuthController extends Controller
     {
         $totalDonations = Donation::count();
         $pendingDonations = Donation::where('status', 'pending')->count();
+        $pendingRequests = ClothRequest::where('status', 'pending')->count();
+        $completedRequests = ClothRequest::where('status', 'approved')->count();
+        $approvedDonations = Donation::where('status', 'approved')->count();
         $totalClothes = Cloth::sum('quantity');
         $totalAdmins = Admin::count();
+        $totalMoneyDonations = EsewaKhalti::count();
 
         return view('admin.dashboard', compact(
             'totalDonations',
             'pendingDonations',
             'totalClothes',
-            'totalAdmins'
+            'totalAdmins',
+            'totalMoneyDonations',
+            'completedRequests',
+            'approvedDonations',
+            'pendingRequests'
         ));
     }
 }

@@ -52,6 +52,11 @@
                         Donate Money
                     </a>
                     <a href="{{ route('user.profile') }}" class="text-gray-700 hover:text-teal-600">Profile</a>
+                    <a href="{{ route('cart.index') }}" class="text-gray-700 hover:text-teal-600 transition relative">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span id="cartCount"
+                            class="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">0</span>
+                    </a>
                 </div>
 
                 <!-- RIGHT SIDE -->

@@ -3,10 +3,16 @@
 @section('title', 'Manage Categories')
 
 @section('content')
-    <div class="container mx-auto px-6 py-8">
-        <div class="gradient-bg rounded-2xl p-8 text-white mb-8">
-            <h1 class="text-3xl font-bold mb-2">Manage Categories</h1>
-            <p class="text-teal-100">Add, edit, or remove clothing categories</p>
+    <div class="container mx-auto px-2 py-0">
+        <div class="container mx-auto px-6 py-0">
+            <div class="gradient-bg rounded-2xl px-6 py-4 text-white mb-2">
+                <div class="flex items-center justify-between gap-6">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold mb-1">Manage Categories</h1>
+                        <p class="text-teal-100 text-sm">Add, edit, or remove clothing categories</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         @if (session('success'))

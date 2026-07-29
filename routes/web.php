@@ -3,8 +3,12 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DonationManageController;
+use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\MoneyDonationController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RequestManageController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\DonationController;
@@ -130,6 +134,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/donations/{id}/reject', [DonationManageController::class, 'reject'])->name('donations.reject');
         Route::post('/donations/{id}/processing', [DonationManageController::class, 'processing'])->name('donations.processing');
         Route::post('/donations/{id}/complete', [DonationManageController::class, 'complete'])->name('donations.complete');
+        Route::get('/admin/donations/export', [DonationManageController::class, 'export'])->name('donations.export');
 
         // Request Management Routes
         Route::get('/requests', [RequestManageController::class, 'index'])->name('requests.index');
@@ -140,6 +145,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/requests/bulk-approve', [RequestManageController::class, 'bulkApprove'])->name('requests.bulk-approve');
         Route::get('/requests/filter/{status}', [RequestManageController::class, 'filter'])->name('requests.filter');
         Route::post('/requests/search', [RequestManageController::class, 'search'])->name('requests.search');
+        Route::get('/admin/requests/export', [RequestManageController::class, 'export'])->name('requests.export');
 
         // Category Management
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -149,5 +155,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Money Donation Report
         Route::get('/money-donations', [MoneyDonationController::class, 'index'])->name('money-donations.index');
+        Route::get('/admin/money-donations/export', [MoneyDonationController::class, 'export'])->name('money-donations.export');
+
+        // Inventory Routes
+        Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('/inventory/create', [InventoryController::class, 'create'])->name('inventory.create');
+        Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
+        Route::get('/inventory/low-stock', [InventoryController::class, 'lowStock'])->name('inventory.low-stock');
+        Route::get('/inventory/{id}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
+        Route::put('/inventory/{id}', [InventoryController::class, 'update'])->name('inventory.update');
+        Route::delete('/inventory/{id}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
+
+        // User Management Routes
+        Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::get('/users/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::get('/users/{id}/donations', [UserController::class, 'donations'])->name('users.donations');
+        Route::get('/users/{id}/requests', [UserController::class, 'requests'])->name('users.requests');
+
+        // Report Routes
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+        // Settings Routes
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings/profile', [SettingController::class, 'updateProfile'])->name('settings.profile');
+        Route::post('/settings/add-admin', [SettingController::class, 'addAdmin'])->name('settings.add-admin');
+        Route::delete('/settings/delete-admin/{id}', [SettingController::class, 'deleteAdmin'])->name('settings.delete-admin');
+        Route::post('/settings/backup', [SettingController::class, 'backupDatabase'])->name('settings.backup');
     });
 });

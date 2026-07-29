@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
-@section('title', 'Money Donations')
+@section('title', 'Financial Donations')
 
 @section('content')
 
-    <h1 class="text-2xl font-bold mb-6">Money Donation List</h1>
+    <h1 class="text-2xl font-bold mb-6">Financial Donation List</h1>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 
@@ -58,6 +58,16 @@
                 <option value="khalti">Khalti</option>
             </select>
         </div>
+
+        <!-- EXPORT -->
+        <a href="{{ route('admin.money-donations.export', [
+            'search' => request('search'),
+            'method' => request('method'),
+        ]) }}"
+            class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold inline-flex items-center whitespace-nowrap">
+            <i class="fas fa-file-excel mr-2"></i>
+            Export Excel
+        </a>
 
     </div>
 

@@ -178,6 +178,15 @@ class DonationController extends Controller
 
                 // Handle image if exists
                 if ($request->hasFile("items.{$index}.image")) {
+                    $file = $request->file("items.{$index}.image");
+
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+
+                    if (! in_array(strtolower($file->getClientOriginalExtension()), $allowed)) {
+                        return back()
+                            ->with('error', 'Only JPG, JPEG, PNG, and GIF images are allowed.')
+                            ->withInput();
+                    }
                     $imagePath = $request->file("items.{$index}.image")->store('donation_items', 'public');
                     $itemData['image_path'] = $imagePath;
                     Log::info("Image uploaded for item {$index}", ['path' => $imagePath]);

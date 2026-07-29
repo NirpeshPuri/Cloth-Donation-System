@@ -70,4 +70,78 @@ class MoneyDonationController extends Controller
             'totalFailed' => $totalFailed,
         ]);
     }
+
+    public function export(Request $request)
+    {
+        $query = EsewaKhalti::with(['user'])->latest();
+
+        // 🔍 SEARCH
+        if ($request->search) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('transaction_id', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($u) use ($search) {
+                        $u->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // 🔽 FILTER (eSewa / Khalti)
+        if ($request->method == 'esewa') {
+            $query->where('transaction_id', 'like', 'txn_%');
+        }
+
+        if ($request->method == 'khalti') {
+            $query->where('transaction_id', 'not like', 'txn_%');
+        }
+
+        // IMPORTANT: get() exports ALL matching records,
+        // not only the paginated 15 records.
+        $donations = $query->get();
+
+        $filename = 'financial_donations_'.date('Y-m-d_H-i-s').'.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ];
+
+        $columns = [
+            'ID',
+            'User Name',
+            'User Email',
+            'Amount',
+            'Transaction ID',
+            'Payment Status',
+            'Date',
+        ];
+
+        $callback = function () use ($donations, $columns) {
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Excel
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, $columns);
+
+            foreach ($donations as $donation) {
+                fputcsv($file, [
+                    $donation->id,
+                    $donation->user->name ?? 'N/A',
+                    $donation->user->email ?? 'N/A',
+                    $donation->amount ?? 0,
+                    $donation->transaction_id ?? 'N/A',
+                    ucfirst($donation->payment_status ?? 'N/A'),
+                    $donation->created_at
+                        ? $donation->created_at->format('Y-m-d H:i:s')
+                        : 'N/A',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
