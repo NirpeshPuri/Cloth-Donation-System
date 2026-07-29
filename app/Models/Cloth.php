@@ -62,4 +62,12 @@ class Cloth extends Model
     {
         return $this->quantity > 0;
     }
+
+    /**
+     * Get or create the anonymous donor
+     */
+    public static function getAnonymousDonor()
+    {
+        return User::getAnonymousDonor();
+    }
 }

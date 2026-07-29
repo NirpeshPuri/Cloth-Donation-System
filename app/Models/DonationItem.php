@@ -61,4 +61,9 @@ class DonationItem extends Model
 
         return $genders[$this->gender] ?? $this->gender;
     }
+
+    public function scopeByDonation($query, $donationId)
+    {
+        return $query->where('donation_id', $donationId);
+    }
 }

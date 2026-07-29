@@ -82,4 +82,112 @@ class Donation extends Model
 
         return $colors[$this->status] ?? 'gray';
     }
+
+    // ADD THESE NEW ACCESSORS
+    public function getDonorNameAttribute()
+    {
+        return $this->donor ? $this->donor->name : 'No Donor';
+    }
+
+    public function getReceiverNameAttribute()
+    {
+        return $this->receiver ? $this->receiver->name : 'No Receiver';
+    }
+
+    public function getClothNameAttribute()
+    {
+        return $this->cloth ? $this->cloth->name : 'Unknown Cloth';
+    }
+
+    public function getFormattedDateAttribute()
+    {
+        return $this->date_of_donation ? $this->date_of_donation->format('M d, Y') : 'N/A';
+    }
+
+    // ADD THESE SCOPES
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'rejected');
+    }
+
+    public function scopeToday($query)
+    {
+        return $query->whereDate('date_of_donation', today());
+    }
+
+    public function scopeThisMonth($query)
+    {
+        return $query->whereMonth('date_of_donation', now()->month)
+            ->whereYear('date_of_donation', now()->year);
+    }
+
+    // ADD THESE HELPER METHODS
+    public function canBeCancelled()
+    {
+        return in_array($this->status, ['pending', 'approved']);
+    }
+
+    public function canBeApproved()
+    {
+        return $this->status === 'pending';
+    }
+
+    public function canBeCompleted()
+    {
+        return $this->status === 'approved' || $this->status === 'processing';
+    }
+
+    public function cancel($reason = null)
+    {
+        $this->update([
+            'status' => 'cancelled',
+            'notes' => $reason ? 'Cancelled: '.$reason."\n".($this->notes ?? '') : ($this->notes ?? ''),
+        ]);
+    }
+
+    public function reject($reason = null)
+    {
+        $this->update([
+            'status' => 'rejected',
+            'notes' => $reason ? 'Rejected: '.$reason."\n".($this->notes ?? '') : ($this->notes ?? ''),
+        ]);
+    }
+
+    public function approve()
+    {
+        $this->update(['status' => 'approved']);
+    }
+
+    public function complete()
+    {
+        $this->update(['status' => 'completed']);
+    }
+
+    public function process()
+    {
+        $this->update(['status' => 'processing']);
+    }
+
+    /**
+     * Get or create the anonymous donor
+     */
+    public static function getAnonymousDonor()
+    {
+        return User::getAnonymousDonor();
+    }
 }

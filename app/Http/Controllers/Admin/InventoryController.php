@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cloth;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,7 @@ class InventoryController extends Controller
     {
         $adminId = Auth::guard('admin')->id();
 
-        $query = Cloth::where('admin_id', $adminId);
+        $query = Cloth::where('admin_id', $adminId)->with('donor');
 
         // Search filter
         if ($request->search) {
@@ -38,7 +39,22 @@ class InventoryController extends Controller
             $query->where('gender', $request->gender);
         }
 
-        $clothes = $query->orderBy('created_at', 'desc')->paginate(20);
+        // Donor filter
+        if ($request->donor_filter) {
+            if ($request->donor_filter === 'anonymous') {
+                $query->whereHas('donor', function ($q) {
+                    $q->where('email', 'anonymous@donation.com');
+                });
+            } elseif ($request->donor_filter === 'real_donor') {
+                $query->whereHas('donor', function ($q) {
+                    $q->where('email', '!=', 'anonymous@donation.com');
+                });
+            } else {
+                $query->where('donor_id', $request->donor_filter);
+            }
+        }
+
+        $clothes = $query->orderBy('created_at', 'desc')->paginate(10);
 
         // Stats
         $totalItems = Cloth::where('admin_id', $adminId)->sum('quantity');
@@ -47,13 +63,19 @@ class InventoryController extends Controller
         $donatedItems = Cloth::where('admin_id', $adminId)->where('status', 'donated')->sum('quantity');
         $lowStockItems = Cloth::where('admin_id', $adminId)->where('quantity', '<=', 5)->where('quantity', '>', 0)->count();
 
+        // Get all donors for filter (excluding anonymous)
+        $donors = User::where('email', '!=', 'anonymous@donation.com')
+            ->orderBy('name')
+            ->get();
+
         return view('admin.inventory.index', compact(
             'clothes',
             'totalItems',
             'availableItems',
             'reservedItems',
             'donatedItems',
-            'lowStockItems'
+            'lowStockItems',
+            'donors'
         ));
     }
 
@@ -80,7 +102,7 @@ class InventoryController extends Controller
             'quality' => 'nullable|string|max:50',
             'description' => 'nullable|string|max:500',
             'status' => 'required|in:available,reserved,donated',
-            'season' => 'nullable|string|max:50',
+            'donor_id' => 'nullable|exists:users,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -90,9 +112,17 @@ class InventoryController extends Controller
             $imagePath = $request->file('image')->store('clothes', 'public');
         }
 
+        // If no donor selected, assign anonymous donor
+        $donorId = $validated['donor_id'] ?? null;
+        if (! $donorId) {
+            $anonymousDonor = Cloth::getAnonymousDonor();
+            $donorId = $anonymousDonor->id;
+        }
+
         // Create cloth
         Cloth::create([
             'admin_id' => Auth::guard('admin')->id(),
+            'donor_id' => $donorId,
             'name' => $validated['name'],
             'category' => $validated['category'],
             'gender' => $validated['gender'],
@@ -102,7 +132,6 @@ class InventoryController extends Controller
             'quality' => $validated['quality'],
             'description' => $validated['description'],
             'status' => $validated['status'],
-            'season' => $validated['season'] ?? null,
             'image_path' => $imagePath,
         ]);
 
@@ -136,19 +165,26 @@ class InventoryController extends Controller
             'quality' => 'nullable|string|max:50',
             'description' => 'nullable|string|max:500',
             'status' => 'required|in:available,reserved,donated',
-            'season' => 'nullable|string|max:50',
+            'donor_id' => 'nullable|exists:users,id',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            // Delete old image if exists
             if ($cloth->image_path) {
                 Storage::disk('public')->delete($cloth->image_path);
             }
             $imagePath = $request->file('image')->store('clothes', 'public');
             $validated['image_path'] = $imagePath;
         }
+
+        // If no donor selected, assign anonymous donor
+        $donorId = $validated['donor_id'] ?? null;
+        if (! $donorId) {
+            $anonymousDonor = Cloth::getAnonymousDonor();
+            $donorId = $anonymousDonor->id;
+        }
+        $validated['donor_id'] = $donorId;
 
         $cloth->update($validated);
 
@@ -162,7 +198,6 @@ class InventoryController extends Controller
     {
         $cloth = Cloth::where('admin_id', Auth::guard('admin')->id())->findOrFail($id);
 
-        // Delete image if exists
         if ($cloth->image_path) {
             Storage::disk('public')->delete($cloth->image_path);
         }
@@ -205,5 +240,68 @@ class InventoryController extends Controller
             ->update(['status' => $request->status]);
 
         return redirect()->route('admin.inventory.index')->with('success', 'Bulk status updated successfully!');
+    }
+
+    /**
+     * Search donor for select2 (exclude anonymous donor)
+     */
+    public function searchDonor(Request $request)
+    {
+        try {
+            $query = $request->get('q', '');
+
+            if (empty($query) || strlen($query) < 1) {
+                return response()->json([]);
+            }
+
+            $donors = User::where('email', '!=', 'anonymous@donation.com')
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', '%'.$query.'%')
+                        ->orWhere('email', 'like', '%'.$query.'%')
+                        ->orWhere('phone', 'like', '%'.$query.'%');
+                })
+                ->limit(10)
+                ->get(['id', 'name', 'email', 'phone', 'profile_photo']);
+
+            $results = $donors->map(function ($donor) {
+                $phone = $donor->phone ?? 'No phone';
+
+                return [
+                    'id' => $donor->id,
+                    'text' => $donor->name.' - '.$donor->email.' ('.$phone.')',
+                ];
+            });
+
+            return response()->json($results);
+
+        } catch (\Exception $e) {
+            \Log::error('Donor search error: '.$e->getMessage());
+
+            return response()->json(['error' => 'Search failed'], 500);
+        }
+    }
+
+    /**
+     * Get donor details for display
+     */
+    public function getDonor($id)
+    {
+        try {
+            $donor = User::find($id);
+            if (! $donor) {
+                return response()->json(null);
+            }
+
+            return response()->json([
+                'id' => $donor->id,
+                'name' => $donor->name,
+                'email' => $donor->email,
+                'phone' => $donor->phone,
+                'profile_photo' => $donor->profile_photo_url,
+                'is_anonymous' => $donor->email === 'anonymous@donation.com',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(null);
+        }
     }
 }

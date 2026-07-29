@@ -165,6 +165,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/inventory/{id}/edit', [InventoryController::class, 'edit'])->name('inventory.edit');
         Route::put('/inventory/{id}', [InventoryController::class, 'update'])->name('inventory.update');
         Route::delete('/inventory/{id}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
+        Route::get('/inventory/search-donor', [InventoryController::class, 'searchDonor'])->name('inventory.search-donor');
+        Route::get('/inventory/get-donor/{id}', [InventoryController::class, 'getDonor'])->name('inventory.get-donor');
 
         // User Management Routes
         Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
