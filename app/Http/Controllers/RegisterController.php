@@ -174,10 +174,16 @@ class RegisterController extends Controller
             'password' => Hash::make($validated['password']),
             'address' => $validated['address'],
             'profile_photo' => $profilePhotoPath,
+            'email_verified_at' => null,
         ]);
 
+        $user->sendEmailVerificationNotification();
+
         // Redirect to login with success message
-        return redirect()->route('login')->with('success', 'Registration successful! Please login.');
+        // return redirect()->route('login')->with('success', 'Registration successful! Please login.');
+
+        // CHANGE REDIRECT - go to verification notice instead of login
+        return redirect()->route('verification.notice')->with('success', 'Registration successful! Please check your email to verify your account.');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -144,5 +145,24 @@ class User extends Authenticatable
                 'profile_photo' => null,
             ]
         );
+    }
+
+    // Add these methods to your User model
+
+    public function hasVerifiedEmail()
+    {
+        return ! is_null($this->email_verified_at);
+    }
+
+    public function markEmailAsVerified()
+    {
+        return $this->forceFill([
+            'email_verified_at' => now(),
+        ])->save();
+    }
+
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VerifyEmailNotification);
     }
 }

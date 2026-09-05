@@ -69,6 +69,13 @@ class LoginController extends Controller
             ])->onlyInput('email');
         }
 
+        // ADD THIS BLOCK - Check if email is verified
+        if (! $user->hasVerifiedEmail()) {
+            session(['email' => $user->email]);
+
+            return redirect()->route('verification.notice')->with('error', 'Please verify your email address first.');
+        }
+
         // Email exists, try to authenticate
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();

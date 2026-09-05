@@ -318,7 +318,8 @@
                         <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }} class="mr-2">
                         <span class="text-sm text-gray-600">Remember me</span>
                     </label>
-                    <a href="#" class="text-sm text-teal-600 hover:underline">Forgot password?</a>
+                    <a href="{{ route('password.request') }}" class="text-sm text-teal-600 hover:underline">Forgot
+                        password?</a>
                 </div>
 
                 <!-- Submit Button -->
