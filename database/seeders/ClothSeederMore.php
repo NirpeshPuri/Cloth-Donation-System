@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
-class ClothSeeder extends Seeder
+class ClothSeederMore extends Seeder
 {
     // Map products to images
     private $productImages = [
@@ -85,9 +85,16 @@ class ClothSeeder extends Seeder
         'Sunglasses' => 'skirt_denim.jpg',
     ];
 
+    // Different prefixes to make names unique
+    private $prefixes = [
+        'Premium', 'Deluxe', 'Classic', 'Elite', 'Ultimate',
+        'Super', 'Mega', 'Pro', 'Plus', 'Ultra',
+        'Royal', 'Grand', 'Supreme', 'Exclusive', 'Prime',
+    ];
+
     public function run()
     {
-        $this->command->info('Starting cloth seeder...');
+        $this->command->info('Starting additional cloth seeder...');
 
         // Get all admins
         $admins = Admin::all();
@@ -102,7 +109,7 @@ class ClothSeeder extends Seeder
         // Get sample clothes
         $clothes = $this->getSampleClothes();
 
-        // Distribute clothes among admins
+        // Distribute clothes among admins with unique names
         foreach ($clothes as $index => $clothData) {
             // Cycle through admins
             $admin = $admins[$index % $admins->count()];
@@ -110,10 +117,14 @@ class ClothSeeder extends Seeder
             // Get specific image for this product
             $imagePath = $this->getProductImage($clothData['name']);
 
+            // Add random prefix to make name unique
+            $prefix = $this->prefixes[array_rand($this->prefixes)];
+            $uniqueName = $prefix.' '.$clothData['name'];
+
             Cloth::create([
                 'admin_id' => $admin->id,
                 'donor_id' => $donor->id,
-                'name' => $clothData['name'],
+                'name' => $uniqueName,
                 'category' => $clothData['category'],
                 'gender' => $clothData['gender'],
                 'size' => $clothData['size'],
@@ -121,15 +132,15 @@ class ClothSeeder extends Seeder
                 'image_path' => $imagePath,
                 'quantity' => $clothData['quantity'],
                 'quality' => $clothData['quality'],
-                'description' => $clothData['description'],
-                'status' => 'available', // All items are available
+                'description' => $clothData['description'].' (Premium quality - Additional stock)',
+                'status' => 'available',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        $this->command->info('✅ '.count($clothes).' sample clothes added successfully!');
-        $this->command->info('📦 Distributed across '.$admins->count().' collection centers');
+        $this->command->info('✅ '.count($clothes).' additional sample clothes added successfully!');
+        $this->command->info('📦 Total clothes now: '.Cloth::count());
     }
 
     private function getProductImage($productName)
@@ -174,7 +185,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 15,
                 'quality' => 'new',
                 'description' => 'Premium 100% cotton formal shirt with classic fit. Crisp white color perfect for office wear.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Striped Casual Shirt',
@@ -185,7 +195,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 10,
                 'quality' => 'like_new',
                 'description' => 'Blue and white striped casual shirt with button-down collar. Perfect for smart casual looks.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Floral Print Top',
@@ -196,7 +205,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 12,
                 'quality' => 'new',
                 'description' => 'Beautiful floral print top with V-neck and flutter sleeves. Light and breathable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Plain T-Shirt',
@@ -207,7 +215,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 25,
                 'quality' => 'new',
                 'description' => 'Essential plain black t-shirt, 100% cotton, comfortable fit. Wardrobe staple.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Premium Formal Shirt',
@@ -218,7 +225,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 8,
                 'quality' => 'new',
                 'description' => 'Premium quality formal shirt in classic blue. Perfect for business meetings.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Linen Casual Shirt',
@@ -229,7 +235,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'like_new',
                 'description' => 'Lightweight linen shirt in white. Perfect for summer days.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Elegant Blouse',
@@ -240,7 +245,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 9,
                 'quality' => 'new',
                 'description' => 'Elegant blouse with ruffled details. Perfect for parties and events.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Graphic T-Shirt',
@@ -251,7 +255,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 14,
                 'quality' => 'new',
                 'description' => 'Trendy graphic print t-shirt with unique design. 100% cotton.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Classic Casual Shirt',
@@ -262,7 +265,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 7,
                 'quality' => 'new',
                 'description' => 'Classic casual shirt with chest pocket. Versatile and stylish.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Silk Blouse',
@@ -273,7 +275,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'new',
                 'description' => 'Elegant silk blouse in cream color. Perfect for formal occasions.',
-                'status' => 'available',
             ],
 
             // ========== JEANS & PANTS (10 items) ==========
@@ -286,7 +287,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 8,
                 'quality' => 'good',
                 'description' => 'Classic slim fit blue jeans with slight stretch for comfort. Versatile and stylish.',
-                'status' => 'available',
             ],
             [
                 'name' => 'High-Rise Jeans',
@@ -297,7 +297,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'like_new',
                 'description' => 'High-rise skinny jeans with stretch denim for perfect fit. Flattering and comfortable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Chino Pants',
@@ -308,7 +307,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 10,
                 'quality' => 'new',
                 'description' => 'Comfortable khaki chino pants, perfect for casual and semi-formal occasions.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Tailored Trousers',
@@ -319,7 +317,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 7,
                 'quality' => 'good',
                 'description' => 'Elegant black tailored trousers with straight leg cut. Perfect for office wear.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Relaxed Jeans',
@@ -330,7 +327,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'good',
                 'description' => 'Comfortable relaxed fit grey jeans. Perfect for casual days.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Cargo Pants',
@@ -341,7 +337,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'new',
                 'description' => 'Durable cargo pants with multiple pockets. Great for outdoor activities.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Casual Pants',
@@ -352,7 +347,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 4,
                 'quality' => 'like_new',
                 'description' => 'Elegant white pants with straight leg. Perfect for summer.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Slim Jeans',
@@ -363,7 +357,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 9,
                 'quality' => 'new',
                 'description' => 'Classic slim black jeans. Versatile and goes with everything.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Classic Denim',
@@ -374,7 +367,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 7,
                 'quality' => 'new',
                 'description' => 'Classic straight cut denim jeans. Timeless style.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Jogger Pants',
@@ -385,7 +377,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 8,
                 'quality' => 'new',
                 'description' => 'Comfortable jogger pants with elastic waist. Perfect for lounging.',
-                'status' => 'available',
             ],
 
             // ========== JACKETS & SWEATERS (6 items) ==========
@@ -398,7 +389,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'good',
                 'description' => 'Classic denim jacket with button closure and multiple pockets. Timeless style.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Woolen Sweater',
@@ -409,7 +399,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 8,
                 'quality' => 'new',
                 'description' => 'Warm woolen sweater with crew neck, perfect for winter. Soft and comfortable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Leather Jacket',
@@ -420,7 +409,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 3,
                 'quality' => 'new',
                 'description' => 'Premium leather jacket in brown. Stylish and durable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Knitted Cardigan',
@@ -431,7 +419,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'like_new',
                 'description' => 'Soft knitted cardigan with button front. Perfect for layering.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Puffer Jacket',
@@ -442,7 +429,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 4,
                 'quality' => 'new',
                 'description' => 'Warm puffer jacket with hood. Perfect for extreme cold weather.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Classic Blazer',
@@ -453,7 +439,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 3,
                 'quality' => 'new',
                 'description' => 'Classic navy blazer. Perfect for formal occasions.',
-                'status' => 'available',
             ],
 
             // ========== DRESSES (6 items) ==========
@@ -466,7 +451,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 9,
                 'quality' => 'new',
                 'description' => 'Beautiful floral print summer dress with tie-up waist. Perfect for sunny days.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Evening Gown',
@@ -477,7 +461,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 3,
                 'quality' => 'new',
                 'description' => 'Elegant floor-length evening gown with lace details. Perfect for special occasions.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Maxi Dress',
@@ -488,7 +471,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 7,
                 'quality' => 'new',
                 'description' => 'Comfortable maxi dress with floral print. Perfect for casual outings.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Party Dress',
@@ -499,7 +481,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'new',
                 'description' => 'Elegant party dress with sequin details. Perfect for night events.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Beach Dress',
@@ -510,7 +491,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 8,
                 'quality' => 'new',
                 'description' => 'Lightweight cover-up dress for beach days. Breathable and comfortable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Silk Gown',
@@ -521,7 +501,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 2,
                 'quality' => 'new',
                 'description' => 'Luxurious silk evening gown with elegant drape. Perfect for galas.',
-                'status' => 'available',
             ],
 
             // ========== TRADITIONAL (6 items) ==========
@@ -534,7 +513,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 4,
                 'quality' => 'new',
                 'description' => 'Premium silk saree with gold border and intricate designs. Perfect for festive occasions.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Kurta Pajama',
@@ -545,7 +523,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'new',
                 'description' => 'Classic white cotton kurta with matching pajama. Traditional and comfortable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Embroidered Saree',
@@ -556,7 +533,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 3,
                 'quality' => 'new',
                 'description' => 'Beautiful embroidered saree with traditional designs. Perfect for weddings.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Designer Kurta',
@@ -567,7 +543,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'new',
                 'description' => 'Designer kurta with embroidery. Perfect for festive occasions.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Festival Lehenga',
@@ -578,7 +553,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 3,
                 'quality' => 'new',
                 'description' => 'Beautiful lehenga with golden embroidery. Perfect for festivals.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Dhoti Kurta',
@@ -589,7 +563,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 4,
                 'quality' => 'new',
                 'description' => 'Traditional dhoti kurta set. Perfect for cultural events.',
-                'status' => 'available',
             ],
 
             // ========== SHOES (6 items) ==========
@@ -602,7 +575,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 4,
                 'quality' => 'good',
                 'description' => 'Genuine leather formal shoes with cushioned soles. Durable and elegant.',
-                'status' => 'available',
             ],
             [
                 'name' => 'White Sneakers',
@@ -613,7 +585,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'new',
                 'description' => 'Comfortable canvas sneakers with rubber soles. Perfect for everyday wear.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Running Shoes',
@@ -624,7 +595,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'new',
                 'description' => 'Lightweight running shoes with cushioned soles. Perfect for athletes.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Classic Formal Shoes',
@@ -635,7 +605,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 4,
                 'quality' => 'like_new',
                 'description' => 'Classic black formal shoes. Perfect for business attire.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Canvas Shoes',
@@ -646,7 +615,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 7,
                 'quality' => 'new',
                 'description' => 'Comfortable canvas shoes in blue. Perfect for casual wear.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Elegant Heels',
@@ -657,7 +625,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 3,
                 'quality' => 'new',
                 'description' => 'Elegant black heels with comfortable fit. Perfect for parties.',
-                'status' => 'available',
             ],
 
             // ========== KIDS (6 items) ==========
@@ -670,7 +637,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 12,
                 'quality' => 'new',
                 'description' => 'Fun cartoon printed t-shirt for kids, 100% cotton. Soft and comfortable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Kids Sport Shoes',
@@ -681,7 +647,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 8,
                 'quality' => 'new',
                 'description' => 'Lightweight sports shoes for active kids with good grip and comfort.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Kids Summer Dress',
@@ -692,7 +657,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 10,
                 'quality' => 'new',
                 'description' => 'Cute summer dress for kids with floral print. Light and comfortable.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Kids Winter Jacket',
@@ -703,7 +667,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'new',
                 'description' => 'Warm winter jacket for kids. Perfect for cold weather.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Kids Denim Pants',
@@ -714,7 +677,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 9,
                 'quality' => 'new',
                 'description' => 'Comfortable denim pants for kids with adjustable waist.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Kids Party Wear',
@@ -725,7 +687,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 6,
                 'quality' => 'new',
                 'description' => 'Beautiful party wear outfit for kids. Perfect for special occasions.',
-                'status' => 'available',
             ],
 
             // ========== OTHER (6 items) ==========
@@ -738,7 +699,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 5,
                 'quality' => 'like_new',
                 'description' => 'Stylish denim skirt with A-line cut. Versatile and trendy.',
-                'status' => 'available',
             ],
             [
                 'name' => 'Beanie Hat',
@@ -749,51 +709,6 @@ class ClothSeeder extends Seeder
                 'quantity' => 10,
                 'quality' => 'new',
                 'description' => 'Warm knitted beanie hat for winter. Cozy and stylish.',
-                'status' => 'available',
-            ],
-            [
-                'name' => 'Leather Belt',
-                'category' => 'Other',
-                'gender' => 'men',
-                'size' => 'M',
-                'color' => 'Brown',
-                'quantity' => 8,
-                'quality' => 'new',
-                'description' => 'Genuine leather belt with classic buckle. Durable and stylish.',
-                'status' => 'available',
-            ],
-            [
-                'name' => 'Printed Scarf',
-                'category' => 'Other',
-                'gender' => 'women',
-                'size' => 'One Size',
-                'color' => 'Multicolor',
-                'quantity' => 12,
-                'quality' => 'new',
-                'description' => 'Soft cotton scarf with beautiful patterns. Perfect for any outfit.',
-                'status' => 'available',
-            ],
-            [
-                'name' => 'Travel Backpack',
-                'category' => 'Other',
-                'gender' => 'unisex',
-                'size' => 'One Size',
-                'color' => 'Black',
-                'quantity' => 6,
-                'quality' => 'new',
-                'description' => 'Durable travel backpack with multiple compartments. Perfect for trips.',
-                'status' => 'available',
-            ],
-            [
-                'name' => 'Sunglasses',
-                'category' => 'Other',
-                'gender' => 'unisex',
-                'size' => 'One Size',
-                'color' => 'Black',
-                'quantity' => 15,
-                'quality' => 'new',
-                'description' => 'Stylish sunglasses with UV protection. Perfect for sunny days.',
-                'status' => 'available',
             ],
         ];
     }

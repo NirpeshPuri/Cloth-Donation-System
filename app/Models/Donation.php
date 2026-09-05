@@ -182,12 +182,4 @@ class Donation extends Model
     {
         $this->update(['status' => 'processing']);
     }
-
-    /**
-     * Get or create the anonymous donor
-     */
-    public static function getAnonymousDonor()
-    {
-        return User::getAnonymousDonor();
-    }
 }

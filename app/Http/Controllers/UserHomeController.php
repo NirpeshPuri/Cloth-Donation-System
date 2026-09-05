@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
+use App\Models\CartItem;
 use App\Models\Cloth;
 use App\Models\ClothRequest;
 use App\Models\Donation;
@@ -107,6 +108,15 @@ class UserHomeController extends Controller
         // ========== ADD THIS ONE LINE ==========
         $categories = Setting::getCategories();
 
+        // Get cart count and cart items for the user
+        $cartCount = 0;
+        $cartItemIds = [];
+        if (Auth::check()) {
+            $cartItems = CartItem::where('user_id', Auth::id())->get();
+            $cartCount = $cartItems->sum('quantity');
+            $cartItemIds = $cartItems->pluck('cloth_id')->toArray();
+        }
+
         return view('user.home', compact(
             'nearbyAdmins',
             'selectedAdmin',
@@ -127,7 +137,9 @@ class UserHomeController extends Controller
             'userLatitude',
             'userLongitude',
             'currentSeason',
-            'categories'
+            'categories',
+            'cartCount',
+            'cartItemIds'
         ));
     }
 
@@ -135,17 +147,25 @@ class UserHomeController extends Controller
     {
         $cloth = Cloth::with('admin')->findOrFail($id);
 
-        // Get frequently requested together items
-        $frequentlyRequestedTogether = $this->recommendationService->getFrequentlyRequestedTogether($id, $cloth->admin_id, 4);
+        // Frequently requested together
+        $frequentlyRequestedTogether =
+            $this->recommendationService->getFrequentlyRequestedTogether(
+                $id,
+                $cloth->admin_id,
+                4
+            );
 
-        // Get related clothes from same admin
-        $relatedClothes = Cloth::where('admin_id', $cloth->admin_id)
-            ->where('id', '!=', $id)
-            ->where('quantity', '>', 0)
-            ->limit(4)
-            ->get();
+        // Similar clothes:
+        // Same collection center + same category + same size
+        // Ranked using cosine similarity
+        $relatedClothes = $this->recommendationService
+            ->getSimilarClothes($id, 10);
 
-        return view('user.cloth-detail', compact('cloth', 'relatedClothes', 'frequentlyRequestedTogether'));
+        return view('user.cloth-detail', compact(
+            'cloth',
+            'relatedClothes',
+            'frequentlyRequestedTogether'
+        ));
     }
 
     public function updateLocation(Request $request)

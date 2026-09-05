@@ -22,7 +22,7 @@
                 ✔
             </div>
 
-            <h1 class="text-2xl font-bold mb-2">Payment Successful 🎉</h1>
+            <h1 class="text-2xl font-bold mb-2">Donation Successful 🎉</h1>
 
             <p class="text-gray-600 mb-4">
                 Thank you for your donation. Your support helps people in need.

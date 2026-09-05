@@ -112,8 +112,8 @@
         <div class="container mx-auto px-6 lg:px-12 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <i class="fas fa-tshirt text-teal-700 text-2xl"></i>
-                <span class="font-extrabold text-2xl tracking-tight text-teal-800">Threads<span
-                        class="text-teal-600">OfHope</span></span>
+                <span class="font-extrabold text-2xl tracking-tight text-teal-800">Cloth Bank<span
+                        class="text-teal-600"></span></span>
             </div>
             <div class="hidden md:flex space-x-8 font-medium text-gray-700">
                 <a href="#home" class="hover:text-teal-700 transition">Home</a>
@@ -190,7 +190,7 @@
                     </div>
                     <div class="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl flex items-center gap-3">
                         <i class="fas fa-hands-helping text-teal-600 text-2xl"></i>
-                        <div><span class="font-black text-xl">2,480+</span><br><span class="text-xs">donations this
+                        <div><span class="font-black text-xl">480+</span><br><span class="text-xs">donations this
                                 month</span></div>
                     </div>
                 </div>
@@ -210,17 +210,17 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="stat-card rounded-2xl p-8 text-center shadow-md transition card-hover">
                     <i class="fas fa-tshirt text-teal-600 text-5xl mb-4"></i>
-                    <div class="text-4xl font-black text-teal-800">12,340+</div>
+                    <div class="text-4xl font-black text-teal-800">2,340+</div>
                     <p class="text-gray-600 mt-2">Clothes items collected</p>
                 </div>
                 <div class="stat-card rounded-2xl p-8 text-center shadow-md transition card-hover">
                     <i class="fas fa-smile text-teal-600 text-5xl mb-4"></i>
-                    <div class="text-4xl font-black text-teal-800">8,920+</div>
+                    <div class="text-4xl font-black text-teal-800">1,920+</div>
                     <p class="text-gray-600 mt-2">People impacted</p>
                 </div>
                 <div class="stat-card rounded-2xl p-8 text-center shadow-md transition card-hover">
                     <i class="fas fa-leaf text-teal-600 text-5xl mb-4"></i>
-                    <div class="text-4xl font-black text-teal-800">2,500 kg</div>
+                    <div class="text-4xl font-black text-teal-800">1,500 kg</div>
                     <p class="text-gray-600 mt-2">Textile waste reduced</p>
                 </div>
             </div>
@@ -321,7 +321,8 @@
                     <div class="flex items-center mt-5 gap-3">
                         <div class="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center"><i
                                 class="fas fa-user text-teal-700"></i></div>
-                        <div><strong>Emily R.</strong><br><span class="text-xs text-gray-500">Donor since 2024</span>
+                        <div><strong>Sita Kumari</strong><br><span class="text-xs text-gray-500">Donor since
+                                2024</span>
                         </div>
                     </div>
                 </div>
@@ -334,7 +335,7 @@
                     <div class="flex items-center mt-5 gap-3">
                         <div class="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center"><i
                                 class="fas fa-user-check text-teal-700"></i></div>
-                        <div><strong>Michael O.</strong><br><span class="text-xs text-gray-500">Beneficiary</span>
+                        <div><strong>Ram Paudel</strong><br><span class="text-xs text-gray-500">Beneficiary</span>
                         </div>
                     </div>
                 </div>
@@ -347,7 +348,8 @@
                     <div class="flex items-center mt-5 gap-3">
                         <div class="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center"><i
                                 class="fas fa-store text-teal-700"></i></div>
-                        <div><strong>Sarah K.</strong><br><span class="text-xs text-gray-500">Corporate partner</span>
+                        <div><strong>Kapil Kumar</strong><br><span class="text-xs text-gray-500">Corporate
+                                partner</span>
                         </div>
                     </div>
                 </div>
@@ -365,9 +367,9 @@
                 <a href="{{ route('register') }}"
                     class="bg-amber-400 hover:bg-amber-500 text-gray-900 px-8 py-4 rounded-full font-bold text-lg shadow-xl transition flex gap-2 items-center"><i
                         class="fas fa-gift"></i> Donate Now</a>
-                <a href="#contact"
+                {{-- <a href="#contact"
                     class="bg-transparent border-2 border-white hover:bg-white/20 px-8 py-4 rounded-full font-semibold transition">Become
-                    a volunteer</a>
+                    a volunteer</a> --}}
             </div>
         </div>
     </section>
@@ -378,14 +380,25 @@
             <div class="grid md:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center gap-2 text-white"><i
-                            class="fas fa-tshirt text-teal-400 text-2xl"></i><span
-                            class="font-bold text-xl">ThreadsOfHope</span></div>
+                            class="fas fa-tshirt text-teal-400 text-2xl"></i><span class="font-bold text-xl">Cloth
+                            Bank</span></div>
                     <p class="mt-4 text-sm">Empowering communities through sustainable clothing donation.</p>
                     <div class="flex gap-4 mt-5">
-                        <a href="#" class="hover:text-teal-400"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="hover:text-teal-400"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="hover:text-teal-400"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="hover:text-teal-400"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="{{ route('social.facebook') }}" target="_blank"
+                            class="hover:text-teal-400 transition" title="Follow us on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="{{ route('social.instagram') }}" target="_blank"
+                            class="hover:text-teal-400 transition" title="Follow us on Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="{{ route('social.twitter') }}" target="_blank"
+                            class="hover:text-teal-400 transition" title="Follow us on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="{{ route('social.linkedin') }}" target="_blank"
+                            class="hover:text-teal-400 transition" title="Connect with us on LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
                     </div>
                 </div>
                 <div>
@@ -397,7 +410,7 @@
                         <li><a href="#testimonials" class="hover:text-teal-400">Stories</a></li>
                     </ul>
                 </div>
-                <div>
+                {{-- <div>
                     <h5 class="font-bold text-white text-lg">Support</h5>
                     <ul class="mt-4 space-y-2 text-sm">
                         <li><a href="#" class="hover:text-teal-400">FAQ</a></li>
@@ -405,26 +418,26 @@
                         <li><a href="#" class="hover:text-teal-400">Terms of service</a></li>
                         <li><a href="#" class="hover:text-teal-400">Partner with us</a></li>
                     </ul>
-                </div>
+                </div> --}}
                 <div>
                     <h5 class="font-bold text-white text-lg">Get in touch</h5>
                     <ul class="mt-4 space-y-2 text-sm">
-                        <li><i class="fas fa-envelope mr-2"></i> hello@threadsofhope.org</li>
-                        <li><i class="fas fa-phone-alt mr-2"></i> +1 (800) 234-5678</li>
-                        <li><i class="fas fa-map-marker-alt mr-2"></i> 123 Charity Ave, Suite 200</li>
+                        <li><i class="fas fa-envelope mr-2"></i> hello@clothbank.org</li>
+                        <li><i class="fas fa-phone-alt mr-2"></i> 9800000000</li>
+                        <li><i class="fas fa-map-marker-alt mr-2"></i> Kathmandu, Nepal</li>
                     </ul>
-                    <div class="mt-6">
+                    {{-- <div class="mt-6">
                         <div class="flex"><input type="email" placeholder="Your email"
                                 class="bg-gray-800 border border-gray-700 rounded-l-lg px-4 py-2 w-full focus:outline-none"><button
                                 class="bg-teal-600 px-4 rounded-r-lg hover:bg-teal-700"><i
                                     class="fas fa-paper-plane"></i></button></div>
                         <p class="text-xs mt-2">Subscribe for updates</p>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-500">
-                © 2025 ThreadsOfHope — Clothing donation platform. Crafted with <i
-                    class="fas fa-heart text-teal-400"></i> for a better world.
+                © 2026 Cloth Bank — Clothing donation platform. Crafted with <i class="fas fa-heart text-teal-400"></i>
+                for a better world.
             </div>
         </div>
     </footer>

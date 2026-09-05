@@ -481,4 +481,96 @@ class ReceiverRecommendationService
 
         return $query->limit($limit)->get();
     }
+
+    /**
+     * Get similar clothes for the "You May Also Like" section.
+     *
+     * Conditions:
+     * - Same collection center
+     * - Same category
+     * - Same size
+     * - Available quantity
+     *
+     * Cosine similarity is used to rank the matching clothes
+     * according to gender and quality as well.
+     */
+    public function getSimilarClothes($clothId, $limit = 10)
+    {
+        // Get the current cloth
+        $cloth = Cloth::findOrFail($clothId);
+
+        // Only get clothes from the SAME collection center,
+        // SAME category and SAME size.
+        $candidateClothes = Cloth::where('admin_id', $cloth->admin_id)
+            ->where('id', '!=', $cloth->id)
+            ->where('quantity', '>', 0)
+            ->where('status', 'available')
+            ->where('category', $cloth->category)
+            ->where('size', $cloth->size)
+            ->get();
+
+        // If there are no matching clothes,
+        // return an empty collection.
+        if ($candidateClothes->isEmpty()) {
+            return collect();
+        }
+
+        // Create vector for the current cloth
+        $clothVector = [
+            'category_'.$cloth->category => 1,
+            'size_'.$cloth->size => 1,
+            'gender_'.$cloth->gender => 1,
+            'quality_'.$cloth->quality => 1,
+        ];
+
+        // Calculate cosine similarity for every candidate
+        $relatedClothes = $candidateClothes->map(function ($item) use ($clothVector) {
+
+            // Create vector for candidate cloth
+            $itemVector = [
+                'category_'.$item->category => 1,
+                'size_'.$item->size => 1,
+                'gender_'.$item->gender => 1,
+                'quality_'.$item->quality => 1,
+            ];
+
+            // Combine vector keys
+            $keys = array_unique(array_merge(
+                array_keys($clothVector),
+                array_keys($itemVector)
+            ));
+
+            $dotProduct = 0;
+            $magnitudeA = 0;
+            $magnitudeB = 0;
+
+            // Cosine similarity calculation
+            foreach ($keys as $key) {
+                $a = $clothVector[$key] ?? 0;
+                $b = $itemVector[$key] ?? 0;
+
+                $dotProduct += $a * $b;
+                $magnitudeA += $a * $a;
+                $magnitudeB += $b * $b;
+            }
+
+            if ($magnitudeA > 0 && $magnitudeB > 0) {
+                $similarity = $dotProduct /
+                    (sqrt($magnitudeA) * sqrt($magnitudeB));
+            } else {
+                $similarity = 0;
+            }
+
+            // Store similarity score
+            $item->similarity_score = $similarity;
+
+            return $item;
+        });
+
+        // Highest similarity first
+        return $relatedClothes
+            ->sortByDesc('similarity_score')
+            ->take($limit)
+            ->values();
+    }
 }

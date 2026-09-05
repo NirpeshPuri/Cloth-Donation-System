@@ -110,4 +110,24 @@ class CartController extends Controller
 
         return redirect()->route('user.my-requests')->with('success', 'Your requests have been submitted!');
     }
+
+    /**
+     * Check which items are in cart
+     */
+    public function checkItems(Request $request)
+    {
+        $request->validate([
+            'cloth_ids' => 'required|array',
+            'cloth_ids.*' => 'exists:clothes,id',
+        ]);
+
+        $inCart = CartItem::where('user_id', Auth::id())
+            ->whereIn('cloth_id', $request->cloth_ids)
+            ->pluck('cloth_id')
+            ->toArray();
+
+        return response()->json([
+            'in_cart' => $inCart,
+        ]);
+    }
 }

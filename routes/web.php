@@ -86,6 +86,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
     Route::get('/cart/count', [CartController::class, 'count'])->name('cart.count');
     Route::post('/cart/checkout', [CartController::class, 'checkout'])->name('cart.checkout');
+    Route::post('/cart/check-items', [CartController::class, 'checkItems'])->name('cart.check-items');
 
     // Request routes
     Route::post('/request', [RequestController::class, 'store'])->name('user.request.store');
@@ -190,3 +191,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/settings/backup', [SettingController::class, 'backupDatabase'])->name('settings.backup');
     });
 });
+
+Route::get('/social/facebook', function () {
+    return view('social.facebook');
+})->name('social.facebook');
+
+Route::get('/social/instagram', function () {
+    return view('social.instagram');
+})->name('social.instagram');
+
+Route::get('/social/twitter', function () {
+    return view('social.twitter');
+})->name('social.twitter');
+
+Route::get('/social/linkedin', function () {
+    return view('social.linkedin');
+})->name('social.linkedin');
